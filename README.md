@@ -18,7 +18,7 @@ Abra http://localhost:8000. Para liberar o acesso a outras máquinas da rede int
 
 Existe também um usuário `teste` (administrador) e um projeto **"Automação (demonstração)"** com dados de exemplo, criados por `backend\demo.py` para os testes. A senha do `teste` está em `DEV_TEST_PASSWORD` no mesmo `.env`. Esse usuário pode ser desativado em *Usuários*, e o projeto pode ser arquivado em *Projetos*.
 
-**Parar o banco:** `scripts\db-stop.ps1`.
+O banco é o PostgreSQL instalado como serviço do Windows, que já inicia sozinho com o computador (veja *Detalhes técnicos*).
 
 ## O que está pronto
 
@@ -57,11 +57,13 @@ docs/               análises dos capítulos de especificação
 
 ### Detalhes técnicos
 
-- **Banco:** PostgreSQL 18 portátil em `runtime\pgsql`, porta **5433**, dados em `runtime\pgdata`. Os bancos são `hyora` (sistema) e `hyora_test` (testes).
+- **Banco:** o sistema usa o **PostgreSQL 18 instalado no Windows** (serviço `postgresql-x64-18`, porta **5432**). Os bancos são `hyora` (sistema) e `hyora_test` (testes), com o usuário `hyora`. A conexão fica no `backend\.env`.
+  - Para apontar para outro PostgreSQL instalado, rode `scripts\usar-postgres-instalado.ps1`. Ele pede a senha de um usuário com permissão de criar usuários e bancos (não precisa ser superusuário), cria os bancos, copia os dados e atualiza o `.env`.
+  - Também existe um PostgreSQL **portátil** em `runtime\pgsql` (porta 5433, dados em `runtime\pgdata`), usado na primeira versão. O `db-start.ps1` só o liga quando o `.env` aponta para a porta 5433; as linhas antigas estão comentadas no `.env` para voltar a ele.
 - **Anexos:** ficam em `runtime\uploads`; o banco guarda só os metadados. Arquivos HTML/SVG são sempre baixados, nunca abertos no navegador, por segurança.
 - **Busca:** combina full-text em português (`tsvector` com `unaccent`) com busca por trecho (`pg_trgm`), as duas com índice.
 - **Para cada mudança no esquema,** crie um novo arquivo `backend/migrations/002_….sql`. Ele é aplicado sozinho na próxima inicialização.
-- **Backup:** `runtime\pgsql\bin\pg_dump.exe -h localhost -p 5433 -U hyora hyora > backup.sql`, mais uma cópia da pasta `runtime\uploads`.
+- **Backup:** `& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h localhost -p 5432 -U hyora -Fc -f backup.dump hyora`, mais uma cópia da pasta `runtime\uploads`. A senha do `hyora` está no `DATABASE_URL` do `.env`.
 
 ## Desenvolvimento
 
