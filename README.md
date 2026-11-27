@@ -111,6 +111,6 @@ Recompila a interface que o `iniciar.ps1` entrega.
 
 ## Próximos passos
 
-1. **Migração do Ora via API.** O modelo de dados já tem `ora_id` em usuários, projetos, labels, tickets, comentários e anexos, para importar sem duplicar e manter os números originais.
+1. **Migração do Ora:** feita para *Automação*, *Mikrotik e Rede* e *Resolução de problemas*. O passo a passo para repetir ou trazer outros projetos está em [docs/migracao-ora.md](docs/migracao-ora.md), e as ferramentas em `backend/ora/`.
 2. **Instalação em servidor:** rodar como serviço do Windows (por exemplo com NSSM) e configurar HTTPS (com `COOKIE_SECURE=true` no `.env`).
 3. **Possíveis melhorias:** notificações (e-mail ou no sistema), lixeira para restaurar excluídos, busca global em todos os projetos, menção `@pessoa`.
