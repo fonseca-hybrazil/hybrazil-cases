@@ -6,20 +6,38 @@ import { del, post, put, type Projeto } from '../api'
 import { useAuth } from '../auth'
 import { Carregando, Erro, Modal } from '../components/comuns'
 import { useProjetos } from '../queries'
+import { IconeProjeto } from '../components/IconeProjeto'
+import SeletorIcone from '../components/SeletorIcone'
+
+export interface DadosProjeto {
+  nome: string
+  descricao: string
+  icone: string | null   // na edição, '' remove o ícone
+  icone_cor: string | null
+}
 
 export function FormProjeto({ inicial, onSalvar, onCancelar }: {
-  inicial?: Partial<Projeto>; onSalvar: (d: { nome: string; descricao: string }) => Promise<void>; onCancelar: () => void
+  inicial?: Partial<Projeto>; onSalvar: (d: DadosProjeto) => Promise<void>; onCancelar: () => void
 }) {
   const [nome, setNome] = useState(inicial?.nome ?? '')
   const [descricao, setDescricao] = useState(inicial?.descricao ?? '')
+  const [icone, setIcone] = useState<string | null>(inicial?.icone ?? null)
+  const [cor, setCor] = useState<string | null>(inicial?.icone_cor ?? null)
   const [erro, setErro] = useState<unknown>(null)
+  const editando = !!inicial
   return (
     <form className="form" onSubmit={async (e) => {
       e.preventDefault()
-      try { await onSalvar({ nome, descricao }) } catch (err) { setErro(err) }
+      try {
+        await onSalvar({ nome, descricao, icone: icone ?? (editando ? '' : null), icone_cor: cor ?? (editando ? '' : null) })
+      } catch (err) { setErro(err) }
     }}>
       <label>Nome<input value={nome} onChange={(e) => setNome(e.target.value)} required autoFocus maxLength={100} /></label>
       <label>Descrição<textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} /></label>
+      <div className="campo">
+        <span className="campo-rotulo">Ícone</span>
+        <SeletorIcone icone={icone} cor={cor} onChange={(i, c) => { setIcone(i); setCor(c) }} />
+      </div>
       <Erro erro={erro} />
       <div className="acoes">
         <button type="button" className="btn" onClick={onCancelar}>Cancelar</button>
@@ -63,6 +81,9 @@ export default function Inicio() {
         {projetos.map((p) => (
           <Link key={p.id} to={`/p/${p.id}`} className="cartao-projeto">
             <div className="cartao-projeto-topo">
+              <span className="cartao-projeto-icone" style={{ background: (p.icone_cor ?? '#57606a') + '1a' }}>
+                <IconeProjeto icone={p.icone} cor={p.icone_cor ?? '#57606a'} tamanho={22} />
+              </span>
               <h3>{p.nome}</h3>
               <button
                 className="btn-icone"
@@ -86,7 +107,7 @@ export default function Inicio() {
         ))}
       </div>
       {novo && (
-        <Modal titulo="Novo projeto" onFechar={() => setNovo(false)}>
+        <Modal largura={620} titulo="Novo projeto" onFechar={() => setNovo(false)}>
           <FormProjeto
             onCancelar={() => setNovo(false)}
             onSalvar={async (d) => {

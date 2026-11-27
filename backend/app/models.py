@@ -86,6 +86,20 @@ class Projeto(Base):
     criado_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
     criado_em: Mapped[datetime] = mapped_column(TS, server_default=func.now())
     ora_id: Mapped[str | None] = mapped_column(Text)
+    icone: Mapped[str | None] = mapped_column(Text)        # 'lucide:<nome>' ou 'lib:<id>'
+    icone_cor: Mapped[str | None] = mapped_column(Text)
+
+
+class Icone(Base):
+    """Ícone enviado para a biblioteca (usado nos projetos)."""
+    __tablename__ = "icones"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nome: Mapped[str] = mapped_column(Text)
+    tipo_mime: Mapped[str] = mapped_column(Text)
+    tamanho: Mapped[int] = mapped_column(Integer)
+    caminho: Mapped[str] = mapped_column(Text)
+    enviado_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
+    criado_em: Mapped[datetime] = mapped_column(TS, server_default=func.now())
 
 
 class Categoria(Base):

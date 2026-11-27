@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from . import db
 from .config import get_settings
 from .migrate import aplicar_migracoes
-from .routers import auth, catalogos, grupos, projetos, tickets, usuarios
+from .routers import auth, catalogos, grupos, icones, projetos, tickets, usuarios
 from .seed import semear
 
 log = logging.getLogger("hyora")
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 def criar_app(com_lifespan: bool = True) -> FastAPI:
     app = FastAPI(title="HyBrazil Cases", lifespan=lifespan if com_lifespan else None)
-    for r in (auth.router, usuarios.router, grupos.router, catalogos.router, projetos.router, tickets.router):
+    for r in (auth.router, usuarios.router, grupos.router, catalogos.router, projetos.router, tickets.router, icones.router):
         app.include_router(r)
 
     @app.exception_handler(HTTPException)

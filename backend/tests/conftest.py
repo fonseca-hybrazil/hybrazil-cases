@@ -11,7 +11,7 @@ from app.security import hash_senha
 from app.seed import semear
 
 SENHA = "senha-de-teste-123"
-TABELAS = ("atividades, anexos, comentarios, ticket_labels, tickets, labels, categorias, favoritos, projetos, "
+TABELAS = ("atividades, anexos, comentarios, ticket_labels, tickets, labels, categorias, favoritos, projetos, icones, "
            "sessoes, grupo_usuarios, grupos, usuarios")
 
 

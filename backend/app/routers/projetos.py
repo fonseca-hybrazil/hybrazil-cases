@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..models import Projeto, Ticket, Usuario, favoritos
+from ..models import Icone, Projeto, Ticket, Usuario, favoritos
 from ..schemas import ContagemStatus, ProjetoEditarIn, ProjetoIn, ProjetoOut
 from ..security import exigir, usuario_logado
 
@@ -29,7 +29,17 @@ def _favoritos(db: Session, usuario_id: int) -> set[int]:
 
 def projeto_out(p: Projeto, favs: set[int], contagens: dict[int, ContagemStatus]) -> ProjetoOut:
     return ProjetoOut(id=p.id, nome=p.nome, descricao=p.descricao, arquivado=p.arquivado,
-                      favorito=p.id in favs, contagem=contagens.get(p.id, ContagemStatus()))
+                      favorito=p.id in favs, contagem=contagens.get(p.id, ContagemStatus()),
+                      icone=p.icone, icone_cor=p.icone_cor)
+
+
+def _conferir_icone(db: Session, icone: str | None) -> str | None:
+    """'' ou None -> sem ícone; 'lib:<id>' precisa existir na biblioteca."""
+    if not icone:
+        return None
+    if icone.startswith("lib:") and db.get(Icone, int(icone[4:])) is None:
+        raise HTTPException(422, "Ícone da biblioteca não encontrado.")
+    return icone
 
 
 def obter_projeto(db: Session, projeto_id: int) -> Projeto:
@@ -54,7 +64,8 @@ def obter(projeto_id: int, eu: Usuario = Depends(usuario_logado), db: Session = 
 
 @router.post("", response_model=ProjetoOut, status_code=201)
 def criar(dados: ProjetoIn, eu: Usuario = Depends(admin), db: Session = Depends(get_db)):
-    p = Projeto(nome=dados.nome.strip(), descricao=dados.descricao.strip(), criado_por=eu.id)
+    p = Projeto(nome=dados.nome.strip(), descricao=dados.descricao.strip(), criado_por=eu.id,
+                icone=_conferir_icone(db, dados.icone), icone_cor=dados.icone_cor)
     db.add(p)
     db.flush()
     return projeto_out(p, set(), {})
@@ -69,6 +80,10 @@ def editar(projeto_id: int, dados: ProjetoEditarIn, eu: Usuario = Depends(admin)
         p.descricao = dados.descricao.strip()
     if dados.arquivado is not None:
         p.arquivado = dados.arquivado
+    if dados.icone is not None:
+        p.icone = _conferir_icone(db, dados.icone)
+    if dados.icone_cor is not None:
+        p.icone_cor = dados.icone_cor or None
     return projeto_out(p, _favoritos(db, eu.id), _contagens(db, [p.id]))
 
 

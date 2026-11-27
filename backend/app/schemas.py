@@ -172,17 +172,37 @@ class ProjetoOut(Base):
     arquivado: bool
     favorito: bool = False
     contagem: ContagemStatus = ContagemStatus()
+    icone: str | None = None
+    icone_cor: str | None = None
+
+
+ICONE_PADRAO = r"^(lucide:[a-z0-9-]{1,60}|lib:\d{1,9})$"
+COR_HEX = r"^#[0-9a-fA-F]{6}$"
 
 
 class ProjetoIn(BaseModel):
     nome: str = Field(min_length=1, max_length=100)
     descricao: str = Field("", max_length=2000)
+    icone: str | None = Field(None, pattern=ICONE_PADRAO)
+    icone_cor: str | None = Field(None, pattern=COR_HEX)
 
 
 class ProjetoEditarIn(BaseModel):
     nome: str | None = Field(None, min_length=1, max_length=100)
     descricao: str | None = Field(None, max_length=2000)
     arquivado: bool | None = None
+    # "" remove o ícone (volta ao padrão); None não mexe
+    icone: str | None = Field(None, pattern=ICONE_PADRAO + "|^$")
+    icone_cor: str | None = Field(None, pattern=COR_HEX + "|^$")
+
+
+class IconeOut(BaseModel):
+    id: int
+    nome: str
+    url: str
+    tipo_mime: str
+    tamanho: int
+    em_uso: int = 0
 
 
 # ------------------------------------------------------------------ tickets

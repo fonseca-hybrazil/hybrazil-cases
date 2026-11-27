@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -14,6 +14,7 @@ import {
 } from '../api'
 import { Avatar, CategoriaBadge, Carregando, Erro, LabelPill, useDebounce } from '../components/comuns'
 import FiltroPainel from '../components/FiltroPainel'
+import { IconeProjeto } from '../components/IconeProjeto'
 import { porId, useCategorias, useLabels, useUsuarios } from '../queries'
 import TicketModal from './TicketModal'
 import { alternarFavorito } from './Inicio'
@@ -67,6 +68,9 @@ export default function QuadroPagina() {
   return (
     <div className="quadro-pagina">
       <header className="quadro-topo">
+        {p.icone && (
+          <span className="quadro-icone"><IconeProjeto icone={p.icone} cor={p.icone_cor ?? '#57606a'} tamanho={20} /></span>
+        )}
         <h1>{p.nome}</h1>
         <button
           className="btn-icone claro"
@@ -275,6 +279,26 @@ function ColunaView({
   const [criando, setCriando] = useState(false)
   const [erro, setErro] = useState<unknown>(null)
 
+  // Rolagem infinita: quando o botão "Carregar mais" aparece no fim da coluna, carrega a próxima página sozinho.
+  // O observador é recriado a cada página; se o botão continuar visível (coluna alta), pede a seguinte.
+  const sentinela = useRef<HTMLButtonElement>(null)
+  const pedido = useRef('')   // "total:quantidade" quando a última página foi pedida (evita pedir duas vezes)
+  const chave = `${total}:${tickets.length}`
+  const [, forcar] = useState(0)
+  useEffect(() => {
+    const el = sentinela.current
+    if (!el || tickets.length >= total) return
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && pedido.current !== chave) {
+        pedido.current = chave
+        forcar((n) => n + 1)
+        onMais()
+      }
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [chave, tickets.length, total, onMais])
+
   const criar = async () => {
     const t = titulo.trim()
     if (!t) return
@@ -323,7 +347,9 @@ function ColunaView({
         </SortableContext>
         {tickets.length === 0 && <div className="coluna-vazia">{filtrado ? 'Nenhum ticket com estes filtros' : 'Vazio'}</div>}
         {tickets.length < total && (
-          <button className="btn-mais" onClick={onMais}>Carregar mais ({total - tickets.length} restantes)</button>
+          <button ref={sentinela} className="btn-mais" onClick={onMais}>
+            {pedido.current === chave ? 'Carregando…' : `Carregar mais (${total - tickets.length} restantes)`}
+          </button>
         )}
       </div>
     </section>

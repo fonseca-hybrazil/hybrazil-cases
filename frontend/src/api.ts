@@ -76,6 +76,17 @@ export interface Projeto {
   arquivado: boolean
   favorito: boolean
   contagem: Record<Status, number>
+  icone: string | null       // 'lucide:<nome>' ou 'lib:<id>'
+  icone_cor: string | null
+}
+
+export interface IconeBiblioteca {
+  id: number
+  nome: string
+  url: string
+  tipo_mime: string
+  tamanho: number
+  em_uso: number
 }
 
 export interface TicketResumo {

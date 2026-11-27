@@ -5,6 +5,7 @@ import { patch, post, type Projeto } from '../../api'
 import { Carregando, Erro, Modal } from '../../components/comuns'
 import { useProjetos } from '../../queries'
 import { FormProjeto } from '../Inicio'
+import { IconeProjeto } from '../../components/IconeProjeto'
 
 export default function AdminProjetos() {
   const qc = useQueryClient()
@@ -29,6 +30,9 @@ export default function AdminProjetos() {
           const total = p.contagem.pendente + p.contagem.andamento + p.contagem.completado
           return (
             <div key={p.id} className={'linha-admin' + (p.arquivado ? ' inativo' : '')}>
+              <span className="cat-icone-grande" style={{ background: (p.icone_cor ?? '#57606a') + '1a' }}>
+                <IconeProjeto icone={p.icone} cor={p.icone_cor ?? '#57606a'} tamanho={18} />
+              </span>
               <span className="linha-nome">
                 <b>{p.nome}</b>{p.arquivado && <span className="suave"> (arquivado)</span>}
                 <div className="suave pequeno">{total} ticket(s){p.descricao ? ` · ${p.descricao}` : ''}</div>
@@ -45,7 +49,7 @@ export default function AdminProjetos() {
         })}
       </div>
       {editando && (
-        <Modal titulo={editando === 'novo' ? 'Novo projeto' : 'Editar projeto'} onFechar={() => setEditando(null)}>
+        <Modal largura={620} titulo={editando === 'novo' ? 'Novo projeto' : 'Editar projeto'} onFechar={() => setEditando(null)}>
           <FormProjeto
             inicial={editando === 'novo' ? undefined : editando}
             onCancelar={() => setEditando(null)}

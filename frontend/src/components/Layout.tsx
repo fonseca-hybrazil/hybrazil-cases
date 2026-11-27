@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../auth'
 import { useProjetos } from '../queries'
 import { Avatar, Popover } from './comuns'
+import { IconeProjeto } from './IconeProjeto'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { eu, sair, pode } = useAuth()
@@ -20,7 +21,8 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const item = (p: (typeof ativos)[number]) => (
     <NavLink key={p.id} to={`/p/${p.id}`} className="side-item" onClick={() => setAberta(false)}>
-      {p.favorito ? <Star size={14} className="estrela-on" /> : <FolderKanban size={14} />}
+      {p.icone ? <IconeProjeto icone={p.icone} cor={p.icone_cor} tamanho={15} />
+        : p.favorito ? <Star size={14} className="estrela-on" /> : <FolderKanban size={14} />}
       <span className="side-texto">{p.nome}</span>
       <span className="side-num">{p.contagem.pendente + p.contagem.andamento || ''}</span>
     </NavLink>
