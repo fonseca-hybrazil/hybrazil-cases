@@ -120,6 +120,8 @@ class Ticket(Base):
     responsavel_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
     criado_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
     ordem: Mapped[float] = mapped_column(Float, default=0)
+    tarefas_total: Mapped[int] = mapped_column(default=0)
+    tarefas_feitas: Mapped[int] = mapped_column(default=0)
     criado_em: Mapped[datetime] = mapped_column(TS, server_default=func.now())
     atualizado_em: Mapped[datetime] = mapped_column(TS, server_default=func.now())
     concluido_em: Mapped[datetime | None] = mapped_column(TS)

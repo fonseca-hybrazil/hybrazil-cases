@@ -4,6 +4,7 @@ import { Color, TextStyle } from '@tiptap/extension-text-style'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import Image from '@tiptap/extension-image'
 import { Placeholder } from '@tiptap/extensions'
+import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { common, createLowlight } from 'lowlight'
 import vbscript from 'highlight.js/lib/languages/vbscript'
 import st from './linguagens/st'
@@ -114,6 +115,9 @@ export function extensoes(placeholder: string) {
     }),
     TextStyle,
     Color,
+    // Lista de tarefas: botão na barra ou "[ ] " / "[x] " no começo da linha; Tab cria subtarefa
+    TaskList,
+    TaskItem.configure({ nested: true }),
     CodeBlockLowlight.configure({ lowlight: lowlightEditor, defaultLanguage: null }),
     ImagemAnexo,
     VideoAnexo,

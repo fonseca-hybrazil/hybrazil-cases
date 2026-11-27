@@ -89,6 +89,8 @@ export interface TicketResumo {
   label_ids: number[]
   qtd_comentarios: number
   tem_descricao: boolean
+  tarefas_total: number
+  tarefas_feitas: number
   ordem: number
   criado_em: string
   concluido_em: string | null

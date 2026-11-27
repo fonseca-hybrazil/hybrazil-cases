@@ -81,16 +81,36 @@ function texto(n: Node, k: number, projetoId?: number): ReactNode {
   return <Fragment key={k}>{el}</Fragment>
 }
 
-function no(n: Node, k: number, projetoId?: number): ReactNode {
-  const filhos = () => (n.content ?? []).map((f, i) => no(f, i, projetoId))
+interface Ctx {
+  projetoId?: number
+  proximaTarefa: number   // posição da próxima caixa, em ordem de leitura (igual ao servidor)
+  onTarefa?: (indice: number, feito: boolean) => void
+}
+
+function no(n: Node, k: number, ctx: Ctx): ReactNode {
+  const filhos = () => (n.content ?? []).map((f, i) => no(f, i, ctx))
   const a = n.attrs ?? {}
   switch (n.type) {
-    case 'text': return texto(n, k, projetoId)
+    case 'text': return texto(n, k, ctx.projetoId)
     case 'paragraph': return <p key={k}>{filhos()}</p>
     case 'heading': return a.level === 3 ? <h3 key={k}>{filhos()}</h3> : <h2 key={k}>{filhos()}</h2>
     case 'bulletList': return <ul key={k}>{filhos()}</ul>
     case 'orderedList': return <ol key={k} start={Number(a.start) || 1}>{filhos()}</ol>
     case 'listItem': return <li key={k}>{filhos()}</li>
+    case 'taskList': return <ul key={k} className="rt-tarefas">{filhos()}</ul>
+    case 'taskItem': {
+      const indice = ctx.proximaTarefa++
+      const feito = a.checked === true
+      const onTarefa = ctx.onTarefa
+      return (
+        <li key={k} className={feito ? 'rt-tarefa feita' : 'rt-tarefa'}>
+          <input type="checkbox" checked={feito} disabled={!onTarefa}
+                 title={onTarefa ? (feito ? 'Desmarcar' : 'Marcar como feito') : undefined}
+                 onChange={(e) => onTarefa?.(indice, e.target.checked)} />
+          <div>{filhos()}</div>
+        </li>
+      )
+    }
     case 'blockquote': return <blockquote key={k}>{filhos()}</blockquote>
     case 'hardBreak': return <br key={k} />
     case 'horizontalRule': return <hr key={k} />
@@ -142,7 +162,13 @@ function no(n: Node, k: number, projetoId?: number): ReactNode {
   }
 }
 
-export default function RichView({ doc, projetoId }: { doc: Doc | null | undefined; projetoId?: number }) {
+export default function RichView({ doc, projetoId, onTarefa }: {
+  doc: Doc | null | undefined
+  projetoId?: number
+  /** Se informado, as caixas de tarefa ficam clicáveis. */
+  onTarefa?: (indice: number, feito: boolean) => void
+}) {
   if (!doc?.content?.length) return null
-  return <div className="rt rt-view">{doc.content.map((n, i) => no(n, i, projetoId))}</div>
+  const ctx: Ctx = { projetoId, proximaTarefa: 0, onTarefa }
+  return <div className="rt rt-view">{doc.content.map((n, i) => no(n, i, ctx))}</div>
 }

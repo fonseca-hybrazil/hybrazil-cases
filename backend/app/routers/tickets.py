@@ -10,9 +10,11 @@ from ..db import get_db
 from ..models import (
     Anexo, Atividade, Categoria, Comentario, Label, Projeto, Ticket, Usuario, ticket_labels,
 )
-from ..richtext import anexos_referenciados, documento_vazio, extrair_texto, sanitizar
+from ..richtext import (
+    anexos_referenciados, contar_tarefas, documento_vazio, extrair_texto, marcar_tarefa, sanitizar,
+)
 from ..schemas import (
-    AnexoOut, Coluna, ComentarioIn, ContagemStatus, ItemTimeline, MoverIn, Quadro, TicketCriarIn,
+    AnexoOut, Coluna, ComentarioIn, ContagemStatus, ItemTimeline, MoverIn, Quadro, TarefaIn, TicketCriarIn,
     TicketDetalhe, TicketEditarIn, TicketResumo,
 )
 from ..security import agora, tem, usuario_logado
@@ -111,6 +113,7 @@ def resumos(db: Session, tickets: list[Ticket]) -> list[TicketResumo]:
             categoria_id=t.categoria_id, responsavel=usuario_basico(t.responsavel),
             label_ids=labels.get(t.id, []), qtd_comentarios=qtd.get(t.id, 0),
             tem_descricao=bool(t.descricao_texto) or t.descricao is not None,
+            tarefas_total=t.tarefas_total, tarefas_feitas=t.tarefas_feitas,
             ordem=t.ordem, criado_em=t.criado_em, concluido_em=t.concluido_em,
         )
         for t in tickets
@@ -141,6 +144,17 @@ def _carregar(db: Session, ticket_id: int) -> Ticket:
 
 def registrar(db: Session, t: Ticket, eu: Usuario, tipo: str, **dados) -> None:
     db.add(Atividade(ticket_id=t.id, usuario_id=eu.id, tipo=tipo, dados=dados))
+
+
+def recalcular_tarefas(db: Session, t: Ticket) -> None:
+    """Soma as caixas de tarefa da descrição e dos comentários (não excluídos) no ticket."""
+    db.flush()
+    feitas, total = contar_tarefas(t.descricao)
+    for conteudo in db.scalars(select(Comentario.conteudo).where(
+            Comentario.ticket_id == t.id, Comentario.excluido_em.is_(None))):
+        f, n = contar_tarefas(conteudo)
+        feitas, total = feitas + f, total + n
+    t.tarefas_feitas, t.tarefas_total = feitas, total
 
 
 # ================================================================ quadro
@@ -263,6 +277,7 @@ def criar_ticket(projeto_id: int, dados: TicketCriarIn, eu: Usuario = Depends(us
         concluido_em=agora() if dados.status == "completado" else None,
     )
     t.labels = _labels(db, dados.label_ids)
+    t.tarefas_feitas, t.tarefas_total = contar_tarefas(desc)
     db.add(t)
     db.flush()
     registrar(db, t, eu, "criou")
@@ -298,6 +313,7 @@ def editar_ticket(ticket_id: int, dados: TicketEditarIn, eu: Usuario = Depends(u
             t.descricao = desc
             t.descricao_texto = extrair_texto(desc) if desc else ""
             registrar(db, t, eu, "descricao")
+            recalcular_tarefas(db, t)
     if "categoria_id" in campos and dados.categoria_id != t.categoria_id:
         _validar_refs(db, dados.categoria_id, None)
         registrar(db, t, eu, "categoria", de=t.categoria_id, para=dados.categoria_id)
@@ -415,6 +431,7 @@ def comentar(ticket_id: int, dados: ComentarioIn, eu: Usuario = Depends(usuario_
     t.atualizado_em = agora()
     db.flush()
     _vincular_anexos(db, t.id, c.id, conteudo)
+    recalcular_tarefas(db, t)
     db.refresh(c)
     return item_comentario(eu, c)
 
@@ -440,6 +457,7 @@ def editar_comentario(comentario_id: int, dados: ComentarioIn, eu: Usuario = Dep
     c.editado_em = agora()
     db.flush()
     _vincular_anexos(db, c.ticket_id, c.id, conteudo)
+    recalcular_tarefas(db, _carregar(db, c.ticket_id))
     return item_comentario(eu, c)
 
 
@@ -450,6 +468,44 @@ def excluir_comentario(comentario_id: int, eu: Usuario = Depends(usuario_logado)
         raise HTTPException(403, "Você não tem permissão para excluir este comentário.")
     c.excluido_em = agora()
     c.excluido_por = eu.id
+    recalcular_tarefas(db, _carregar(db, c.ticket_id))
+
+
+# ================================================================ tarefas
+# Qualquer usuário logado pode marcar/desmarcar uma tarefa (ex.: quem executa o procedimento),
+# mesmo sem poder editar o texto. Fica registrado na linha do tempo quem marcou.
+@router.post("/tickets/{ticket_id}/tarefas", response_model=TicketDetalhe)
+def marcar_tarefa_descricao(ticket_id: int, dados: TarefaIn, eu: Usuario = Depends(usuario_logado),
+                            db: Session = Depends(get_db)):
+    t = _carregar(db, ticket_id)
+    r = marcar_tarefa(t.descricao, dados.indice, dados.feito)
+    if r is None:
+        raise HTTPException(404, "Tarefa não encontrada (a descrição pode ter sido alterada).")
+    novo, texto_ = r
+    if novo != t.descricao:
+        t.descricao = novo
+        registrar(db, t, eu, "tarefa", texto=texto_, feito=dados.feito)
+        recalcular_tarefas(db, t)
+    db.flush()
+    db.expire(t)
+    return detalhe(db, eu, _carregar(db, t.id))
+
+
+@router.post("/comentarios/{comentario_id}/tarefas", response_model=ItemTimeline)
+def marcar_tarefa_comentario(comentario_id: int, dados: TarefaIn, eu: Usuario = Depends(usuario_logado),
+                             db: Session = Depends(get_db)):
+    c = _comentario(db, comentario_id)
+    r = marcar_tarefa(c.conteudo, dados.indice, dados.feito)
+    if r is None:
+        raise HTTPException(404, "Tarefa não encontrada (o comentário pode ter sido alterado).")
+    novo, texto_ = r
+    if novo != c.conteudo:
+        c.conteudo = novo   # sem marcar "editado": o texto não mudou
+        t = _carregar(db, c.ticket_id)
+        registrar(db, t, eu, "tarefa", texto=texto_, feito=dados.feito, comentario_id=c.id)
+        recalcular_tarefas(db, t)
+    db.flush()
+    return item_comentario(eu, c)
 
 
 # ================================================================= anexos

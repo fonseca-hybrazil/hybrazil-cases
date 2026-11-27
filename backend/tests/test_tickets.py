@@ -241,3 +241,42 @@ def test_video_permite_avancar_com_range(ana, projeto):
     assert r.content == conteudo[100:200]
     assert r.headers["content-type"] == "video/mp4"
     assert r.headers["content-range"] == f"bytes 100-199/{len(conteudo)}"
+
+
+def _lista_tarefas(*itens: tuple[str, bool]) -> dict:
+    return {"type": "taskList", "content": [
+        {"type": "taskItem", "attrs": {"checked": feito},
+         "content": [{"type": "paragraph", "content": [{"type": "text", "text": txt}]}]}
+        for txt, feito in itens
+    ]}
+
+
+def test_lista_de_tarefas(ana, bruno, projeto):
+    desc = {"type": "doc", "content": [_lista_tarefas(("Desligar disjuntor", True), ("Medir isolação", False))]}
+    t = ana.post(f"/api/projetos/{projeto}/tickets", json={"titulo": "Procedimento", "descricao": desc}).json()
+    assert (t["tarefas_feitas"], t["tarefas_total"]) == (1, 2)
+
+    # comentário com mais 3 tarefas, uma delas com valor inválido em "checked" (vira False)
+    lista = _lista_tarefas(("Passo A", False), ("Passo B", False), ("Passo C", True))
+    lista["content"][0]["attrs"]["checked"] = "sim"
+    c = ana.post(f"/api/tickets/{t['id']}/comentarios", json={"conteudo": {"type": "doc", "content": [lista]}}).json()
+    assert ana.get(f"/api/tickets/{t['id']}").json()["tarefas_total"] == 5
+    assert ana.get(f"/api/tickets/{t['id']}").json()["tarefas_feitas"] == 2
+
+    # Bruno não é autor do comentário, mas pode marcar a tarefa (sem marcar o comentário como editado)
+    r = bruno.post(f"/api/comentarios/{c['id']}/tarefas", json={"indice": 1, "feito": True})
+    assert r.status_code == 200, r.text
+    assert r.json()["editado_em"] is None
+    assert r.json()["conteudo"]["content"][0]["content"][1]["attrs"]["checked"] is True
+    # marcar a da descrição
+    d = bruno.post(f"/api/tickets/{t['id']}/tarefas", json={"indice": 1, "feito": True}).json()
+    assert (d["tarefas_feitas"], d["tarefas_total"]) == (4, 5)
+    # posição inexistente
+    assert bruno.post(f"/api/tickets/{t['id']}/tarefas", json={"indice": 9, "feito": True}).status_code == 404
+    # fica registrado quem marcou e qual tarefa
+    ativ = [i for i in ana.get(f"/api/tickets/{t['id']}/timeline").json() if i.get("atividade") == "tarefa"]
+    assert [(a["usuario"]["login"], a["dados"]["texto"], a["dados"]["feito"]) for a in ativ] == [
+        ("bruno", "Passo B", True), ("bruno", "Medir isolação", True)]
+    # excluir o comentário tira as tarefas dele da conta
+    assert ana.delete(f"/api/comentarios/{c['id']}").status_code == 204
+    assert ana.get(f"/api/tickets/{t['id']}").json()["tarefas_total"] == 2

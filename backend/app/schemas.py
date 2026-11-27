@@ -197,6 +197,8 @@ class TicketResumo(BaseModel):
     label_ids: list[int]
     qtd_comentarios: int
     tem_descricao: bool
+    tarefas_total: int
+    tarefas_feitas: int
     ordem: float
     criado_em: datetime
     concluido_em: datetime | None
@@ -257,6 +259,11 @@ class AnexoOut(Base):
 
 class ComentarioIn(BaseModel):
     conteudo: dict
+
+
+class TarefaIn(BaseModel):
+    indice: int = Field(ge=0)  # posição da caixa no documento (ordem de leitura, começando em 0)
+    feito: bool
 
 
 class ItemTimeline(BaseModel):

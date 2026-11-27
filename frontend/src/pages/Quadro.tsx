@@ -7,7 +7,7 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlignLeft, Filter, MessageSquare, Plus, Search, Star, UserRound, X } from 'lucide-react'
+import { AlignLeft, Filter, ListChecks, MessageSquare, Plus, Search, Star, UserRound, X } from 'lucide-react'
 import {
   filtrosAtivos, filtrosDeParams, filtrosParaParams, get, post, STATUS, STATUS_NOME,
   type Coluna, type Filtros, type Projeto, type Status, type TicketResumo,
@@ -389,6 +389,12 @@ function Cartao({ t, fantasma, alternarConcluido }: {
           </span>
         )}
         {t.tem_descricao && <span className="cartao-meta" title="Tem descrição"><AlignLeft size={13} /></span>}
+        {t.tarefas_total > 0 && (
+          <span className={t.tarefas_feitas === t.tarefas_total ? 'cartao-meta tarefas-ok' : 'cartao-meta'}
+                title={`${t.tarefas_feitas} de ${t.tarefas_total} tarefas feitas`}>
+            <ListChecks size={13} /> {t.tarefas_feitas}/{t.tarefas_total}
+          </span>
+        )}
         <span className="cartao-resp">
           {resp ? <Avatar u={resp} tamanho={22} /> : <span className="sem-resp" title="Sem responsável"><UserRound size={13} /></span>}
         </span>

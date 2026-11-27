@@ -1,4 +1,5 @@
 """Utilidades para o conteúdo do editor (documento JSON do TipTap/ProseMirror)."""
+import copy
 import re
 from typing import Any
 
@@ -68,6 +69,8 @@ def sanitizar(doc: Any) -> Any:
         attrs = no.get("attrs") or {}
         if tipo in ("image", "video", "arquivo") and not _url_ok(attrs.get("src")):
             return None
+        if tipo == "taskItem":
+            no = {**no, "attrs": {**attrs, "checked": attrs.get("checked") is True}}
         if "marks" in no:
             marks = []
             for m in no.get("marks") or []:
@@ -85,6 +88,41 @@ def sanitizar(doc: Any) -> Any:
         return no
 
     return limpar(doc, 0)
+
+
+def _itens_tarefa(doc: Any) -> list[dict]:
+    """Itens de lista de tarefas (taskItem) na ordem de leitura; um item pai vem antes dos subitens."""
+    itens: list[dict] = []
+
+    def visitar(no: Any, prof: int) -> None:
+        if prof > MAX_PROFUNDIDADE or not isinstance(no, dict):
+            return
+        if no.get("type") == "taskItem":
+            itens.append(no)
+        for filho in no.get("content") or []:
+            visitar(filho, prof + 1)
+
+    visitar(doc, 0)
+    return itens
+
+
+def contar_tarefas(doc: Any) -> tuple[int, int]:
+    """(feitas, total) das caixas de tarefa do documento."""
+    itens = _itens_tarefa(doc)
+    return sum(1 for i in itens if (i.get("attrs") or {}).get("checked") is True), len(itens)
+
+
+def marcar_tarefa(doc: Any, indice: int, feito: bool) -> tuple[dict, str] | None:
+    """Cópia do documento com a tarefa `indice` marcada/desmarcada, e o texto da tarefa.
+    None se não existir tarefa nessa posição."""
+    novo = copy.deepcopy(doc)
+    itens = _itens_tarefa(novo)
+    if not 0 <= indice < len(itens):
+        return None
+    item = itens[indice]
+    item["attrs"] = {**(item.get("attrs") or {}), "checked": feito}
+    primeiro = (item.get("content") or [None])[0]  # o texto do item, sem os subitens
+    return novo, extrair_texto(primeiro)[:200]
 
 
 def documento_vazio(doc: Any) -> bool:

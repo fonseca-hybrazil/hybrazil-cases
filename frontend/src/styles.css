@@ -278,6 +278,20 @@ input:disabled { background: var(--superficie-2); color: var(--texto-suave); }
 .rt h3 { font-size: 15px; margin: 12px 0 4px; }
 .rt ul, .rt ol { padding-left: 24px; margin: 0 0 8px; }
 .rt li > p { margin: 0; }
+
+/* listas de tarefas: no editor (TipTap) e no texto salvo (RichView) */
+.rt ul[data-type="taskList"], .rt ul.rt-tarefas { list-style: none; padding-left: 4px; }
+.rt ul[data-type="taskList"] ul[data-type="taskList"], .rt ul.rt-tarefas ul.rt-tarefas { padding-left: 22px; margin: 2px 0 0; }
+.rt li[data-checked], .rt li.rt-tarefa { display: flex; align-items: flex-start; gap: 7px; margin: 2px 0; }
+.rt li[data-checked] > label { flex: none; margin-top: 3px; user-select: none; }
+.rt li[data-checked] > div, .rt li.rt-tarefa > div { flex: 1; min-width: 0; }
+.rt li[data-checked] > div > p, .rt li.rt-tarefa > div > p { margin: 0; }
+.rt li[data-checked] input[type="checkbox"], .rt li.rt-tarefa > input[type="checkbox"] {
+  width: 15px; height: 15px; margin: 3px 0 0; accent-color: var(--completado); cursor: pointer; flex: none;
+}
+.rt li.rt-tarefa > input[type="checkbox"]:disabled { cursor: default; }
+.rt li[data-checked="true"] > div > p, .rt li.rt-tarefa.feita > div > p { color: var(--texto-suave); text-decoration: line-through; }
+.cartao-meta.tarefas-ok { color: var(--completado); font-weight: 600; }
 .rt blockquote { border-left: 3px solid #c8d1da; margin: 0 0 8px; padding: 2px 12px; color: #57606a; background: #f8fafb; border-radius: 0 4px 4px 0; }
 .rt hr { border: 0; border-top: 1px solid var(--borda); margin: 14px 0; }
 .rt :not(pre) > code { background: #eff1f3; border-radius: 4px; padding: 1px 5px; font-size: 12.5px; color: #c7254e; }

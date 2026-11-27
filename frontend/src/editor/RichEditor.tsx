@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import {
-  Bold, Code, FileCode2, Heading2, Heading3, Italic, Link2, List, ListOrdered, Minus, Paperclip, Palette, Quote,
+  Bold, Code, FileCode2, Heading2, Heading3, Italic, Link2, List, ListChecks, ListOrdered, Minus, Paperclip, Palette, Quote,
   Strikethrough, Underline, Loader2,
 } from 'lucide-react'
 import { enviarArquivo, type Anexo, type Doc } from '../api'
@@ -122,6 +122,7 @@ function Barra({ editor, onArquivos, enviando }: { editor: Editor; onArquivos: (
       h3: e.isActive('heading', { level: 3 }),
       ul: e.isActive('bulletList'),
       ol: e.isActive('orderedList'),
+      tarefas: e.isActive('taskList'),
       quote: e.isActive('blockquote'),
       codeBlock: e.isActive('codeBlock'),
       lang: (e.getAttributes('codeBlock').language as string | null) ?? '',
@@ -188,6 +189,7 @@ function Barra({ editor, onArquivos, enviando }: { editor: Editor; onArquivos: (
       <B titulo="Subtítulo" ativo={s.h3} onClick={() => c().toggleHeading({ level: 3 }).run()}><Heading3 size={15} /></B>
       <B titulo="Lista" ativo={s.ul} onClick={() => c().toggleBulletList().run()}><List size={15} /></B>
       <B titulo="Lista numerada" ativo={s.ol} onClick={() => c().toggleOrderedList().run()}><ListOrdered size={15} /></B>
+      <B titulo="Lista de tarefas (ou digite [ ] e espaço)" ativo={s.tarefas} onClick={() => c().toggleTaskList().run()}><ListChecks size={15} /></B>
       <B titulo="Citação" ativo={s.quote} onClick={() => c().toggleBlockquote().run()}><Quote size={15} /></B>
       <B titulo="Linha divisória" onClick={() => c().setHorizontalRule().run()}><Minus size={15} /></B>
       <span className="tb-sep" />

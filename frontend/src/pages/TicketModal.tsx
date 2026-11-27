@@ -362,7 +362,21 @@ function SeletorLabels({ selecionadas, onMudar }: { selecionadas: number[]; onMu
 }
 
 function Descricao({ t, onSalvar }: { t: TicketDetalhe; onSalvar: (d: Doc | null) => Promise<void> }) {
+  const qc = useQueryClient()
   const [editando, setEditando] = useState(false)
+  const [erroTarefa, setErroTarefa] = useState<unknown>(null)
+  const marcarTarefa = async (indice: number, feito: boolean) => {
+    setErroTarefa(null)
+    try {
+      const novo = await post<TicketDetalhe>(`/api/tickets/${t.id}/tarefas`, { indice, feito })
+      qc.setQueryData(['ticket', t.projeto_id, t.numero], novo)
+      qc.invalidateQueries({ queryKey: ['timeline', t.id] })
+      qc.invalidateQueries({ queryKey: ['coluna', t.projeto_id] })
+    } catch (e) {
+      setErroTarefa(e)
+      qc.invalidateQueries({ queryKey: ['ticket', t.projeto_id, t.numero] })
+    }
+  }
   const [doc, setDoc] = useState<Doc | null>(t.descricao)
   const [salvando, setSalvando] = useState(false)
 
@@ -402,11 +416,13 @@ function Descricao({ t, onSalvar }: { t: TicketDetalhe; onSalvar: (d: Doc | null
     return <button className="add-descricao" onClick={() => setEditando(true)}>Adicionar descrição…</button>
   }
   return (
-    <div className="descricao descricao-view" onDoubleClick={() => setEditando(true)}>
+    <div className="descricao descricao-view"
+         onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest('input')) setEditando(true) }}>
       <button className="btn-icone editar-desc" title="Editar descrição" onClick={() => setEditando(true)}>
         <Pencil size={14} />
       </button>
-      <RichView doc={t.descricao} projetoId={t.projeto_id} />
+      <RichView doc={t.descricao} projetoId={t.projeto_id} onTarefa={marcarTarefa} />
+      <Erro erro={erroTarefa} />
     </div>
   )
 }
@@ -421,6 +437,8 @@ function textoAtividade(i: ItemTimeline, mapaL: Map<number, Label>, cats: Return
     case 'moveu': return <>moveu de <b>{STATUS_NOME[d.de as Status]}</b> para <b>{STATUS_NOME[d.para as Status]}</b></>
     case 'titulo': return <>alterou o título de <i>“{d.de}”</i></>
     case 'descricao': return <>editou a descrição</>
+    case 'tarefa':
+      return <>{d.feito ? 'concluiu a tarefa' : 'reabriu a tarefa'} <i>“{d.texto || '…'}”</i></>
     case 'categoria':
       return d.para ? <>definiu a categoria <CategoriaBadge cat={cat(d.para)} comNome /></> : <>removeu a categoria</>
     case 'responsavel':
@@ -499,6 +517,17 @@ function Comentario({ i, u, t }: { i: ItemTimeline; u: ItemTimeline['usuario']; 
       setErro(e)
     }
   }
+  const marcarTarefa = async (indice: number, feito: boolean) => {
+    setErro(null)
+    try {
+      await post(`/api/comentarios/${i.id}/tarefas`, { indice, feito })
+    } catch (e) {
+      setErro(e)
+    }
+    qc.invalidateQueries({ queryKey: ['timeline', t.id] })
+    qc.invalidateQueries({ queryKey: ['ticket', t.projeto_id, t.numero] })
+    qc.invalidateQueries({ queryKey: ['coluna', t.projeto_id] })
+  }
   const excluir = async () => {
     if (!window.confirm('Excluir este comentário?')) return
     try {
@@ -536,7 +565,7 @@ function Comentario({ i, u, t }: { i: ItemTimeline; u: ItemTimeline['usuario']; 
             </div>
           </>
         ) : (
-          <RichView doc={i.conteudo} projetoId={t.projeto_id} />
+          <RichView doc={i.conteudo} projetoId={t.projeto_id} onTarefa={marcarTarefa} />
         )}
         <Erro erro={erro} />
       </div>
