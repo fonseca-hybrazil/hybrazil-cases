@@ -1,9 +1,11 @@
 // Renderiza o documento do editor como React (sem HTML cru), com destaque de código e links #123.
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, useCallback, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { Doc, Node } from '../api'
 import { tamanhoArquivo } from '../util'
 import { destacarAuto, LINGUAGENS, lowlight } from './extensoes'
+import Lightbox, { type ImagemLightbox } from './Lightbox'
+import PlanilhaViewer, { EXT_PLANILHA } from './PlanilhaViewer'
 
 const NOME_LINGUAGEM = new Map(LINGUAGENS.filter(([v]) => v && v !== 'plaintext'))
 
@@ -85,6 +87,9 @@ interface Ctx {
   projetoId?: number
   proximaTarefa: number   // posição da próxima caixa, em ordem de leitura (igual ao servidor)
   onTarefa?: (indice: number, feito: boolean) => void
+  imagens: ImagemLightbox[]
+  abrirImagem: (indice: number) => void
+  abrirPlanilha: (p: { id: number; nome: string }) => void
 }
 
 function no(n: Node, k: number, ctx: Ctx): ReactNode {
@@ -124,8 +129,16 @@ function no(n: Node, k: number, ctx: Ctx): ReactNode {
     case 'image': {
       const src = urlSegura(a.src)
       if (!src) return null
+      const indice = ctx.imagens.push({ src, alt: a.alt ?? '' }) - 1
+      // miniatura limitada pelo CSS; clique abre o visualizador (Ctrl/meio-clique ainda abre em nova aba)
       return (
-        <a key={k} href={src} target="_blank" rel="noopener noreferrer" className="rt-img-link">
+        <a key={k} href={src} target="_blank" rel="noopener noreferrer" className="rt-img-link"
+           title="Clique para ampliar"
+           onClick={(e) => {
+             if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return
+             e.preventDefault()
+             ctx.abrirImagem(indice)
+           }}>
           <img src={src} alt={a.alt ?? ''} loading="lazy" />
         </a>
       )
@@ -155,6 +168,16 @@ function no(n: Node, k: number, ctx: Ctx): ReactNode {
               abrir
             </span>
           )}
+          {URL_ANEXO.test(src) && EXT_PLANILHA.test(a.nome ?? '') && (
+            <span className="rt-arquivo-abrir" title="Ver a planilha aqui, sem baixar"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    ctx.abrirPlanilha({ id: Number(src.split('/')[3]), nome: a.nome ?? 'planilha' })
+                  }}>
+              visualizar
+            </span>
+          )}
         </a>
       )
     }
@@ -168,7 +191,17 @@ export default function RichView({ doc, projetoId, onTarefa }: {
   /** Se informado, as caixas de tarefa ficam clicáveis. */
   onTarefa?: (indice: number, feito: boolean) => void
 }) {
+  const [aberta, setAberta] = useState<number | null>(null)
+  const [planilha, setPlanilha] = useState<{ id: number; nome: string } | null>(null)
+  const fecharPlanilha = useCallback(() => setPlanilha(null), [])
   if (!doc?.content?.length) return null
-  const ctx: Ctx = { projetoId, proximaTarefa: 0, onTarefa }
-  return <div className="rt rt-view">{doc.content.map((n, i) => no(n, i, ctx))}</div>
+  const ctx: Ctx = { projetoId, proximaTarefa: 0, onTarefa, imagens: [], abrirImagem: setAberta, abrirPlanilha: setPlanilha }
+  const conteudo = doc.content.map((n, i) => no(n, i, ctx))
+  return (
+    <div className="rt rt-view">
+      {conteudo}
+      {aberta !== null && <Lightbox imagens={ctx.imagens} inicial={aberta} onFechar={() => setAberta(null)} />}
+      {planilha && <PlanilhaViewer anexoId={planilha.id} nome={planilha.nome} onFechar={fecharPlanilha} />}
+    </div>
+  )
 }

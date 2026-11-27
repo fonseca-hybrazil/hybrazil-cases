@@ -243,6 +243,42 @@ def test_video_permite_avancar_com_range(ana, projeto):
     assert r.headers["content-range"] == f"bytes 100-199/{len(conteudo)}"
 
 
+def test_visualizar_planilha(ana, projeto):
+    import io
+    from datetime import datetime
+    import openpyxl
+    t = novo(ana, projeto, "Com planilha")
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Geração"
+    ws.append(["Dia", "UG1", "Fator"])
+    ws.append([datetime(2024, 8, 1), 886, 0.123456789])
+    ws["C2"].number_format = "0.00%"
+    ws["D2"] = 2.5
+    ws["D2"].number_format = "0.00"
+    wb.create_sheet("Resumo")["B3"] = "ok"
+    buf = io.BytesIO()
+    wb.save(buf)
+    x = ana.post(f"/api/tickets/{t['id']}/anexos", files={"arquivo": (
+        "dados.xlsx", buf.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}).json()
+    r = ana.get(f"/api/anexos/{x['id']}/planilha")
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert [a["nome"] for a in d["abas"]] == ["Geração", "Resumo"]
+    assert d["linhas"] == [["Dia", "UG1", "Fator", None], ["01/08/2024", 886, "12,35%", 2.5]]
+    d = ana.get(f"/api/anexos/{x['id']}/planilha?aba=1").json()
+    assert d["aba"] == 1 and d["linhas"] == [[None, None], [None, None], [None, "ok"]]
+    # CSV com ponto e vírgula e acentos em Windows-1252
+    c = ana.post(f"/api/tickets/{t['id']}/anexos", files={"arquivo": (
+        "medidas.csv", "Tag;Valor\nNível;1,5\n".encode("cp1252"), "text/csv")}).json()
+    assert ana.get(f"/api/anexos/{c['id']}/planilha").json()["linhas"] == [["Tag", "Valor"], ["Nível", "1,5"]]
+    # arquivo que não é planilha, ou xlsx corrompido
+    p = ana.post(f"/api/tickets/{t['id']}/anexos", files={"arquivo": ("a.pdf", b"%PDF", "application/pdf")}).json()
+    assert ana.get(f"/api/anexos/{p['id']}/planilha").status_code == 415
+    z = ana.post(f"/api/tickets/{t['id']}/anexos", files={"arquivo": ("ruim.xlsx", b"nao e zip", "application/octet-stream")}).json()
+    assert ana.get(f"/api/anexos/{z['id']}/planilha").status_code == 422
+
+
 def _lista_tarefas(*itens: tuple[str, bool]) -> dict:
     return {"type": "taskList", "content": [
         {"type": "taskItem", "attrs": {"checked": feito},

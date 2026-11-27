@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import and_, exists, func, or_, select, text, update
 from sqlalchemy.orm import Session, selectinload
 
-from .. import arquivos
+from .. import arquivos, planilha
 from ..db import get_db
 from ..models import (
     Anexo, Atividade, Categoria, Comentario, Label, Projeto, Ticket, Usuario, ticket_labels,
@@ -536,3 +536,13 @@ def baixar_anexo(anexo_id: int, download: bool = False, _: Usuario = Depends(usu
     if a is None:
         raise HTTPException(404, "Anexo não encontrado.")
     return arquivos.resposta_arquivo(a.caminho, a.nome_original, a.tipo_mime, forcar_download=download)
+
+
+@router.get("/anexos/{anexo_id}/planilha")
+def ver_planilha(anexo_id: int, aba: int = Query(0, ge=0), _: Usuario = Depends(usuario_logado),
+                 db: Session = Depends(get_db)):
+    """Conteúdo de uma aba de planilha anexada (xlsx/xlsm/csv), para o visualizador."""
+    a = db.get(Anexo, anexo_id)
+    if a is None:
+        raise HTTPException(404, "Anexo não encontrado.")
+    return planilha.ler(arquivos.caminho_absoluto(a.caminho), a.nome_original, aba)

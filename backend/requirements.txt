@@ -5,5 +5,7 @@ psycopg[binary]>=3.2
 pydantic-settings>=2.6
 argon2-cffi>=23.1
 python-multipart>=0.0.18
+openpyxl>=3.1
+defusedxml>=0.7
 pytest>=8.3
 httpx>=0.28

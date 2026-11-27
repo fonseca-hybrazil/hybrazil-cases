@@ -43,6 +43,34 @@ powershell -ExecutionPolicy Bypass -File scripts\atualizar.ps1 -Testes
 - Se algo falhar, nada é trocado e o site continua na versão anterior.
 - As mudanças no banco (`backend/migrations`) são aplicadas sozinhas quando o servidor reinicia.
 
+### Backup e restauração
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\backup.ps1 -Nome antes-da-mudanca-x
+```
+
+Copia o **banco e os anexos juntos** para `runtime\backups\<nome>-<data-hora>\`, com o site no ar. A pasta tem:
+
+- `banco.dump`: o banco inteiro.
+- `anexos\`: a cópia dos arquivos anexados.
+- `info.txt`: a data, a versão do código (commit) e as contagens de tickets, comentários etc., para conferir.
+
+Use `-SemAnexos` para um backup só do banco, que é rápido e pequeno.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\restaurar.ps1 -Backup pos-migracao-ora
+```
+
+Volta o sistema ao estado de um backup. Pode passar o nome (ou o começo dele; pega o mais recente) ou o caminho da pasta. O script:
+
+1. Pede para digitar `RESTAURAR`.
+2. Faz um backup de segurança do estado atual (`antes-restauracao-…`), para poder desfazer.
+3. Para o site, recria o banco, espelha os anexos e religa o site.
+
+Com `-Teste`, restaura só no banco de **testes** e confere as contagens com o `info.txt`, sem tocar no site. Serve para verificar se um backup está bom.
+
+O backup **`pos-migracao-ora`** guarda o estado logo após a migração do Ora (27/11/2026). As pastas de backup ficam só nesta máquina (não vão para o GitHub). Copie-as para outro disco se quiser uma cópia fora do computador.
+
 ## O que está pronto
 
 | Área | Recursos |
@@ -55,7 +83,7 @@ powershell -ExecutionPolicy Bypass -File scripts\atualizar.ps1 -Testes
 | Ticket | Número `#N` por projeto, título editável, categoria, labels, responsável, descrição rica, linha do tempo (comentários + histórico de alterações, agrupados por dia), link copiável, exclusão conforme permissão |
 | Texto rico | Negrito, itálico, sublinhado, riscado, **cor do texto**, títulos, listas com marcadores e numeradas (`-` ou `1.` + espaço), **listas de tarefas** (`[ ]` + espaço; qualquer pessoa marca a caixa direto no comentário salvo, fica registrado quem marcou e o cartão mostra o progresso, ex.: 3/8), citação, código na linha, **blocos de código com destaque de sintaxe** (com escolha de linguagem), links, atalhos Markdown (`**`, `#`, ```` ``` ````, `>`, `-`), `#123` vira link para o ticket |
 | Linguagens de código | Escolha na lista do bloco ou digite ```` ``` ```` + nome + espaço (ex.: ```` ```st ````). Inclui **Texto Estruturado** (`st`, CODESYS V2.3 e V3.5: palavras-chave, tipos, `T#5S`, `16#FF`, `%IX0.0`, pragmas `{attribute ...}`, TON/R_TRIG etc.) e **VBScript do Elipse E3** (`elipse`: objetos `Application`/`Screen`/`Parent`, funções E3Globals como `OPCIsGood` e métodos como `GetObject`/`WriteEx`), além de Python, C#, SQL, JSON, XML e outras. No modo *Automático* a linguagem é detectada entre as da lista |
-| Anexos | Pelo botão 📎, **colando (Ctrl+V)** ou **arrastando** para o editor (até 1 GB por arquivo). Imagens aparecem no texto; vídeos que o navegador toca (MP4/H.264, WebM) ganham player com avanço/retrocesso e link para baixar; AVI, MKV, PDF e outros viram cartão para baixar |
+| Anexos | Pelo botão 📎, **colando (Ctrl+V)** ou **arrastando** para o editor (até 1 GB por arquivo). Imagens aparecem no texto; vídeos que o navegador toca (MP4/H.264, WebM) ganham player com avanço/retrocesso e link para baixar; AVI, MKV, PDF e outros viram cartão para baixar. Imagens aparecem reduzidas no comentário; o clique abre um visualizador (tamanho original, setas entre imagens). Planilhas **XLSX/XLSM/CSV** têm o link **visualizar**, que mostra as abas como tabela sem baixar (até 1.000 linhas × 60 colunas por aba; valores, não fórmulas) |
 | Filtros | Texto (título, descrição e comentários; sem acento; plurais; trechos de códigos como `52L`), labels (qualquer/todas), categoria, responsável ("Meus tickets", "Sem responsável") e ID. Os filtros ficam na URL, então o link filtrado pode ser compartilhado |
 | Labels | Globais (compartilhadas entre projetos), criadas direto no ticket; tela para editar, **mesclar** duplicadas e excluir |
 | Categorias | Tela de edição com nome, **ícone** (45 opções), **cor** e ordem. Uma categoria em uso é desativada em vez de excluída |
@@ -87,7 +115,7 @@ docs/               análises dos capítulos de especificação
 - **Anexos:** ficam em `runtime\uploads`; o banco guarda só os metadados. Arquivos HTML/SVG são sempre baixados, nunca abertos no navegador, por segurança.
 - **Busca:** combina full-text em português (`tsvector` com `unaccent`) com busca por trecho (`pg_trgm`), as duas com índice.
 - **Para cada mudança no esquema,** crie um novo arquivo `backend/migrations/002_….sql`. Ele é aplicado sozinho na próxima inicialização.
-- **Backup:** `& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h localhost -p 5432 -U hyora -Fc -f backup.dump hyora`, mais uma cópia da pasta `runtime\uploads`. A senha do `hyora` está no `DATABASE_URL` do `.env`.
+- **Backup:** use `scripts\backup.ps1` e `scripts\restaurar.ps1` (veja *Backup e restauração*). Eles leem a conexão do `.env` e nunca mostram a senha.
 
 ## Desenvolvimento
 
