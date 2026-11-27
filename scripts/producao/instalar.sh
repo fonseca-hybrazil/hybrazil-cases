@@ -97,13 +97,17 @@ else
     sudo -u "$APP_USER" env PYTHONDONTWRITEBYTECODE=1 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 >"$log" 2>&1 &
     pid=$!
     ok=0
-    for _ in $(seq 1 40); do
+    for _ in $(seq 1 60); do
         sleep 0.5
-        if curl -fsS http://127.0.0.1:8000/api/saude >/dev/null 2>&1; then ok=1; break; fi
+        if curl -fsS -m 3 http://127.0.0.1:8000/api/saude >/dev/null 2>&1; then ok=1; break; fi
         kill -0 $pid 2>/dev/null || break
     done
-    tela=$(curl -fsS http://127.0.0.1:8000/ 2>/dev/null | grep -c '<div id="root">' || true)
-    kill $pid 2>/dev/null || true; wait $pid 2>/dev/null || true
+    tela=$(curl -fsS -m 5 http://127.0.0.1:8000/ 2>/dev/null | grep -c '<div id="root">' || true)
+    # encerra o teste; se o servidor nao sair sozinho (ex.: preso conectando no banco), forca
+    kill $pid 2>/dev/null || true
+    for _ in $(seq 1 10); do kill -0 $pid 2>/dev/null || break; sleep 0.5; done
+    pkill -9 -u "$APP_USER" -f 'uvicorn app.main:app' 2>/dev/null || true
+    kill -9 $pid 2>/dev/null || true; wait $pid 2>/dev/null || true
     if [ $ok -eq 1 ] && [ "$tela" -ge 1 ]; then
         echo "OK: o site subiu com o usuario $APP_USER, conectou no banco e entregou a interface."
         grep -i 'senha gerada' "$log" >/dev/null && echo "(Banco vazio: foi criado um admin provisorio. Ele some quando o backup for restaurado.)"

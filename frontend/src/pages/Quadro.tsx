@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -182,6 +182,18 @@ function Board({
     }
   }
 
+  // Funções estáveis para os cartões (memo): sempre chamam a versão mais recente.
+  const moverRef = useRef(mover)
+  moverRef.current = mover
+  const abrirRef = useRef(abrir)
+  abrirRef.current = abrir
+  const alternarConcluido = useCallback((t: TicketResumo) =>
+    moverRef.current(t, t.status === 'completado' ? 'pendente' : 'completado', null), [])
+  const abrirCartao = useCallback((t: TicketResumo) => abrirRef.current(t), [])
+  const onMaisRef = useRef(onMais)
+  onMaisRef.current = onMais
+  const mais = useMemo(() => Object.fromEntries(STATUS.map((s) => [s, () => onMaisRef.current(s)])) as Record<Status, () => void>, [])
+
   const inicio = (e: DragStartEvent) => {
     const s = ondeEsta(e.active.id)
     setArrastando(s ? cols[s].find((t) => t.id === e.active.id) ?? null : null)
@@ -244,9 +256,9 @@ function Board({
               totalSemFiltro={totaisSemFiltro[s]}
               filtrado={filtrado}
               arquivado={arquivado}
-              onMais={() => onMais(s)}
-              abrir={abrir}
-              alternarConcluido={(t) => mover(t, t.status === 'completado' ? 'pendente' : 'completado', null)}
+              onMais={mais[s]}
+              abrir={abrirCartao}
+              alternarConcluido={alternarConcluido}
               aoCriar={recarregar}
             />
           ))}
@@ -356,7 +368,9 @@ function ColunaView({
   )
 }
 
-function CartaoArrastavel({ t, abrir, alternarConcluido }: {
+// memo: durante o arrasto o dnd-kit atualiza todos os itens a cada movimento; com as props estáveis,
+// só o "invólucro" (posição) é refeito e o conteúdo do cartão não é redesenhado.
+const CartaoArrastavel = memo(function CartaoArrastavel({ t, abrir, alternarConcluido }: {
   t: TicketResumo; abrir: (t: TicketResumo) => void; alternarConcluido: (t: TicketResumo) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id })
@@ -372,9 +386,9 @@ function CartaoArrastavel({ t, abrir, alternarConcluido }: {
       <Cartao t={t} alternarConcluido={alternarConcluido} />
     </div>
   )
-}
+})
 
-function Cartao({ t, fantasma, alternarConcluido }: {
+const Cartao = memo(function Cartao({ t, fantasma, alternarConcluido }: {
   t: TicketResumo; fantasma?: boolean; alternarConcluido?: (t: TicketResumo) => void
 }) {
   const { data: labels } = useLabels()
@@ -427,4 +441,4 @@ function Cartao({ t, fantasma, alternarConcluido }: {
       </div>
     </div>
   )
-}
+})
