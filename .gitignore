@@ -15,3 +15,5 @@ frontend/dist/
 Specs/*.jpg
 Specs/*.jpeg
 Specs/*.png
+frontend/dist-novo/
+frontend/dist-velho/
