@@ -1,0 +1,26 @@
+o ora é basicamente um sistema onde organizamos tickets sobre os problemas que enfrentamos na nossa empresa. basicamente cadastramos os problemas, descrevemos procedimentos, enviamos fotos, vídeos, arquivos, trechos de código.
+
+Basicamente separamos os problemas por "area" vamos dizer projetos.
+Cada projeto, tem três áreas (como um kanbam): pendentes, em andamento e completadas. ver "image1" como é a área de um projeto e como são organizados os tickets
+
+cada ticket tem um identificador #123 por exemplo, que pode ser referenciado. Ao abrir um ticket (ver image 2).
+
+Eu tenho um título para o case, tenho uma descrição para ele. 
+
+Além disso eu tenho o recurso de labels, eu posso criar quantas labels eu quiser, o label ele contém basicamente um texto e uma cor.
+
+Veja que dentro de um ticket eu posso inserir diversos comentários, seria interessante ser do tipo markdown, mas gostaria de colocar recursos para mudar trechos de cor de texto, além  dos tradicionais (itálico, negrito, citação, etc)
+
+gostaria que fosse possível destacar trechos de códigos também, possível enviar anexos como fotos, vídeos, arquivos pdf, etc.
+
+Cada ticket teria um responsável, não tem recursos de um case ser filho de outro não. eu crio um ticket e designo um responsável, não tem plan, deadline, não precisa de nada disso. 
+
+É necessário que tenham datas de criação do ticket, datas dos comentários. É possível categorizar também o ticket além do label (tem alguns ícones como por exemplo o simbolo de exclamação. 
+
+As categorias
+-Problema
+-Implementação
+-Modificação
+-Estudo
+-Verificação
+-Documentação

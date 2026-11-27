@@ -1,0 +1,17 @@
+# Ferramentas portáteis, dados do banco e uploads
+runtime/
+
+# Configuração local com senhas
+backend/.env
+
+# Dependências e builds
+backend/.venv/
+**/__pycache__/
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+
+# Capturas de tela do Ora com dados internos (fora do repositório público)
+Specs/*.jpg
+Specs/*.jpeg
+Specs/*.png

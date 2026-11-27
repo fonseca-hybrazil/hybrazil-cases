@@ -1,0 +1,60 @@
+// Ícones disponíveis para as categorias (nome usado no banco → componente)
+import {
+  AlertOctagon, Bell, BookOpen, Bug, Calendar, Camera, CircleAlert, CircleCheck, CircleHelp, ClipboardCheck,
+  ClipboardList, Code, Cog, Cpu, Database, Eye, FileText, Flag, FlaskConical, Flame, Gauge, GraduationCap,
+  Hammer, Lightbulb, Link, Lock, MessageSquare, Microscope, Network, Pencil, Plug, Power, Rocket, Search, Server,
+  Settings, Shield, Sparkles, Star, Sun, Target, TriangleAlert, Truck, Wrench, Zap, type LucideIcon,
+} from 'lucide-react'
+
+export const ICONES: Record<string, LucideIcon> = {
+  'triangle-alert': TriangleAlert,
+  'circle-alert': CircleAlert,
+  'alert-octagon': AlertOctagon,
+  bug: Bug,
+  flame: Flame,
+  rocket: Rocket,
+  sparkles: Sparkles,
+  code: Code,
+  wrench: Wrench,
+  hammer: Hammer,
+  pencil: Pencil,
+  settings: Settings,
+  cog: Cog,
+  'book-open': BookOpen,
+  'graduation-cap': GraduationCap,
+  lightbulb: Lightbulb,
+  'flask-conical': FlaskConical,
+  microscope: Microscope,
+  search: Search,
+  'circle-check': CircleCheck,
+  'clipboard-check': ClipboardCheck,
+  'clipboard-list': ClipboardList,
+  eye: Eye,
+  'file-text': FileText,
+  'message-square': MessageSquare,
+  'circle-help': CircleHelp,
+  zap: Zap,
+  power: Power,
+  plug: Plug,
+  cpu: Cpu,
+  server: Server,
+  database: Database,
+  network: Network,
+  gauge: Gauge,
+  sun: Sun,
+  shield: Shield,
+  lock: Lock,
+  bell: Bell,
+  flag: Flag,
+  target: Target,
+  star: Star,
+  calendar: Calendar,
+  camera: Camera,
+  truck: Truck,
+  link: Link,
+}
+
+export function IconeCategoria({ nome, cor, tamanho = 14 }: { nome: string; cor: string; tamanho?: number }) {
+  const I = ICONES[nome] ?? CircleAlert
+  return <I size={tamanho} color={cor} strokeWidth={2.4} />
+}

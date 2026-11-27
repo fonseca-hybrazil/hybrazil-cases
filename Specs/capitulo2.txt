@@ -1,0 +1,9 @@
+deve ser possível eu conseguir fazer os seguintes filtros:
+
+-filtro por label
+-filtro por texto (texto aparece no título ou em algum dos comentários dentro de um ticket)
+-filtro por categoria
+-filtro por id do ticket
+
+
+terá um sistema de login, ou seja, preciso de gerenciar usuários desse sistema, ao acessar devemos efetuar login
