@@ -149,7 +149,6 @@ O script foi testado num PostgreSQL 18.6. Foram verificados cada item da tabela,
 
 ## Próximos passos
 
-2. Instalar o sistema no servidor: Python, a pasta do projeto, o `backend/.env` com a `DATABASE_URL` acima e a pasta dos anexos (`UPLOAD_DIR`).
-3. Levar os dados atuais desta máquina para o servidor (banco + anexos).
-4. Rodar o site como serviço (`systemd`), com um usuário próprio do sistema e com a pasta de anexos acessível só por ele, atrás do nginx com HTTPS.
-5. Configurar o backup semanal para o SharePoint, mantendo os 2 últimos.
+2. [Instalar o sistema e trazer os dados](02-sistema-e-dados.md) desta máquina (banco + anexos).
+3. Rodar o site como serviço (`systemd`), atrás do nginx com HTTPS.
+4. Configurar o backup semanal para o SharePoint, mantendo os 2 últimos.
