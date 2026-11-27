@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import type { Categoria, Label, UsuarioBasico } from '../api'
 import { IconeCategoria } from '../icones'
-import { corDoNome, corTexto, iniciais, PALETA } from '../util'
+import { corDoNome, corTexto, iniciais, PALETA, reduzirImagem } from '../util'
 
 export function Avatar({ u, tamanho = 24 }: { u: Pick<UsuarioBasico, 'nome' | 'avatar_url'> | null; tamanho?: number }) {
   if (!u) return null
@@ -108,6 +108,40 @@ export function SeletorCor({ valor, onChange }: { valor: string; onChange: (c: s
 export function Erro({ erro }: { erro: unknown }) {
   if (!erro) return null
   return <div className="erro">{erro instanceof Error ? erro.message : String(erro)}</div>
+}
+
+/** Foto do usuário com botões "Trocar foto" / "Remover". A imagem é reduzida no navegador antes do envio. */
+export function EditorFoto({ u, enviar, remover }: {
+  u: Pick<UsuarioBasico, 'nome' | 'avatar_url'>
+  enviar: (f: File) => Promise<unknown>
+  remover: () => Promise<unknown>
+}) {
+  const input = useRef<HTMLInputElement>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const [erro, setErro] = useState<unknown>(null)
+  const executar = async (acao: () => Promise<unknown>) => {
+    setErro(null); setOcupado(true)
+    try { await acao() } catch (e) { setErro(e) } finally { setOcupado(false) }
+  }
+  return (
+    <div className="perfil-avatar">
+      <Avatar u={u} tamanho={64} />
+      <div>
+        <button type="button" className="btn" disabled={ocupado} onClick={() => input.current?.click()}>
+          {ocupado ? 'Enviando…' : u.avatar_url ? 'Trocar foto' : 'Enviar foto'}
+        </button>
+        {u.avatar_url && (
+          <button type="button" className="btn-link" disabled={ocupado} onClick={() => executar(remover)}>Remover</button>
+        )}
+        <input ref={input} type="file" accept="image/*" hidden onChange={(e) => {
+          const f = e.target.files?.[0]
+          e.target.value = ''
+          if (f) executar(async () => enviar(await reduzirImagem(f)))
+        }} />
+        <Erro erro={erro} />
+      </div>
+    </div>
+  )
 }
 
 export function useConfirmar() {

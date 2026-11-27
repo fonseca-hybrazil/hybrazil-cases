@@ -47,28 +47,39 @@ def listar_basico(_: Usuario = Depends(usuario_logado), db: Session = Depends(ge
     return [usuario_basico(u) for u in db.scalars(select(Usuario).order_by(func.lower(Usuario.nome)))]
 
 
+AVATAR_TIPOS = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
+
+
+def _trocar_avatar(u: Usuario, arquivo: UploadFile | None) -> None:
+    """Grava a nova foto (ou remove, se arquivo=None) e apaga a anterior do disco."""
+    rel = None
+    if arquivo is not None:
+        if (arquivo.content_type or "") not in AVATAR_TIPOS:
+            raise HTTPException(422, "Envie uma imagem PNG, JPEG ou WebP.")
+        rel, _, _ = arquivos.salvar_upload(arquivo, "avatares", limite_mb=5)
+    arquivos.remover(u.avatar_caminho)
+    u.avatar_caminho = rel
+
+
 @router.get("/api/usuarios/{usuario_id}/avatar")
 def avatar(usuario_id: int, _: Usuario = Depends(usuario_logado), db: Session = Depends(get_db)):
     u = db.get(Usuario, usuario_id)
     if not u or not u.avatar_caminho:
         raise HTTPException(404, "Sem avatar.")
-    return arquivos.resposta_arquivo(u.avatar_caminho, "avatar", "image/png" if u.avatar_caminho.endswith(".png") else "image/jpeg")
+    ext = "." + u.avatar_caminho.rsplit(".", 1)[-1].lower()
+    mime = next((m for m, e in AVATAR_TIPOS.items() if e == ext or (ext == ".jpeg" and m == "image/jpeg")), "image/jpeg")
+    return arquivos.resposta_arquivo(u.avatar_caminho, "avatar", mime)
 
 
 @router.post("/api/auth/avatar", response_model=Eu)
 def enviar_avatar(arquivo: UploadFile = File(...), usuario: Usuario = Depends(usuario_logado)):
-    if not (arquivo.content_type or "").startswith(("image/png", "image/jpeg")):
-        raise HTTPException(422, "Envie uma imagem PNG ou JPEG.")
-    rel, _, _ = arquivos.salvar_upload(arquivo, "avatares", limite_mb=5)
-    arquivos.remover(usuario.avatar_caminho)
-    usuario.avatar_caminho = rel
+    _trocar_avatar(usuario, arquivo)
     return eu_out(usuario)
 
 
 @router.delete("/api/auth/avatar", response_model=Eu)
 def remover_avatar(usuario: Usuario = Depends(usuario_logado)):
-    arquivos.remover(usuario.avatar_caminho)
-    usuario.avatar_caminho = None
+    _trocar_avatar(usuario, None)
     return eu_out(usuario)
 
 
@@ -122,6 +133,31 @@ def editar(
         if u.id == eu.id and "admin_usuarios" not in {p for g in novos for p in g.permissoes}:
             raise HTTPException(422, "Você não pode remover sua própria permissão de administrar usuários.")
         u.grupos = novos
+    db.flush()
+    return admin_out(u)
+
+
+def _usuario(db: Session, usuario_id: int) -> Usuario:
+    u = db.get(Usuario, usuario_id)
+    if u is None:
+        raise HTTPException(404, "Usuário não encontrado.")
+    return u
+
+
+@router.post("/api/admin/usuarios/{usuario_id}/avatar", response_model=UsuarioAdmin)
+def admin_enviar_avatar(
+    usuario_id: int, arquivo: UploadFile = File(...), _: Usuario = Depends(admin), db: Session = Depends(get_db),
+):
+    u = _usuario(db, usuario_id)
+    _trocar_avatar(u, arquivo)
+    db.flush()
+    return admin_out(u)
+
+
+@router.delete("/api/admin/usuarios/{usuario_id}/avatar", response_model=UsuarioAdmin)
+def admin_remover_avatar(usuario_id: int, _: Usuario = Depends(admin), db: Session = Depends(get_db)):
+    u = _usuario(db, usuario_id)
+    _trocar_avatar(u, None)
     db.flush()
     return admin_out(u)
 

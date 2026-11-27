@@ -85,3 +85,24 @@ def test_grupos_personalizados(admin, app):
     # grupos do sistema não podem ser excluídos
     assert admin.delete("/api/admin/grupos/1").status_code == 422
     assert admin.delete(f"/api/admin/grupos/{gid}").status_code == 204
+
+
+def test_admin_troca_foto_de_outro_usuario(admin, ana):
+    ana_id = ana.get("/api/auth/me").json()["id"]
+    foto = {"arquivo": ("rosto.jpg", b"\xff\xd8\xff fake jpeg", "image/jpeg")}
+    # usuário comum não pode trocar a foto de outro
+    assert ana.post(f"/api/admin/usuarios/{ana_id}/avatar", files=foto).status_code == 403
+    # tipo inválido
+    r = admin.post(f"/api/admin/usuarios/{ana_id}/avatar", files={"arquivo": ("x.gif", b"GIF89a", "image/gif")})
+    assert r.status_code == 422
+    r = admin.post(f"/api/admin/usuarios/{ana_id}/avatar", files=foto)
+    assert r.status_code == 200, r.text
+    url = r.json()["avatar_url"]
+    assert url and ana.get("/api/auth/me").json()["avatar_url"] == url
+    img = ana.get(url)
+    assert img.status_code == 200 and img.content == b"\xff\xd8\xff fake jpeg"
+    assert img.headers["content-type"] == "image/jpeg"
+    # remover
+    r = admin.delete(f"/api/admin/usuarios/{ana_id}/avatar")
+    assert r.status_code == 200 and r.json()["avatar_url"] is None
+    assert ana.get(url).status_code == 404

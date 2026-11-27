@@ -51,3 +51,25 @@ export const PALETA = [
   '#05a2c2', '#0091ff', '#3e63dd', '#6e56cf', '#8e4ec6', '#ab4aba', '#d6409f', '#e93d82',
   '#ad7f58', '#978365', '#687076', '#1f2328',
 ]
+
+// Reduz uma foto (ex.: do celular, vários MB) para no máximo `lado` px, em JPEG, antes de enviar como avatar.
+export async function reduzirImagem(arquivo: File, lado = 512): Promise<File> {
+  let bmp: ImageBitmap
+  try {
+    bmp = await createImageBitmap(arquivo)
+  } catch {
+    throw new Error('Não foi possível ler esta imagem. Use uma foto JPEG, PNG ou WebP.')
+  }
+  const escala = Math.min(1, lado / Math.max(bmp.width, bmp.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bmp.width * escala)
+  canvas.height = Math.round(bmp.height * escala)
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height)
+  bmp.close()
+  const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, 'image/jpeg', 0.9))
+  if (!blob) throw new Error('Falha ao processar a imagem.')
+  return new File([blob], 'avatar.jpg', { type: 'image/jpeg' })
+}

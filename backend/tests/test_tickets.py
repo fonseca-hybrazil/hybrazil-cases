@@ -229,3 +229,15 @@ def test_favoritos_e_contagens(admin, projeto):
     assert admin.put(f"/api/projetos/{projeto}/favorito").status_code == 204
     p = admin.get("/api/projetos").json()[0]
     assert p["favorito"] is True and p["contagem"]["pendente"] == 1
+
+
+def test_video_permite_avancar_com_range(ana, projeto):
+    """O player do navegador pede pedaços do vídeo (Range); sem 206 não dá para avançar/voltar."""
+    t = novo(ana, projeto, "Com vídeo")
+    conteudo = bytes(range(256)) * 40
+    v = ana.post(f"/api/tickets/{t['id']}/anexos", files={"arquivo": ("teste.mp4", conteudo, "video/mp4")}).json()
+    r = ana.get(v["url"], headers={"Range": "bytes=100-199"})
+    assert r.status_code == 206
+    assert r.content == conteudo[100:200]
+    assert r.headers["content-type"] == "video/mp4"
+    assert r.headers["content-range"] == f"bytes 100-199/{len(conteudo)}"

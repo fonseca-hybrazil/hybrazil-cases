@@ -288,6 +288,9 @@ input:disabled { background: var(--superficie-2); color: var(--texto-suave); }
 .rt-editor img.ProseMirror-selectednode { outline: 3px solid var(--primaria); }
 .rt-img-link { display: block; width: fit-content; }
 .rt-video { max-width: 100%; max-height: 420px; border-radius: 6px; background: #000; display: block; margin: 4px 0 8px; }
+.rt-video-box { margin: 4px 0 10px; width: fit-content; max-width: 100%; }
+.rt-video-box .rt-video { margin: 0; }
+.rt-video-box figcaption { font-size: 12px; color: var(--texto-suave, #6b7280); margin-top: 4px; }
 .rt-arquivo { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--borda); background: #fafbfc; border-radius: 6px; padding: 6px 12px; margin: 2px 0 8px; color: var(--texto); max-width: 100%; }
 .rt-arquivo:hover { background: #f0f3f6; }
 .rt-arquivo-nome { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

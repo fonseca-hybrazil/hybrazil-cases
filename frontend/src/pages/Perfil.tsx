@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { del, enviarArquivo, patch, type Eu } from '../api'
 import { useAuth } from '../auth'
-import { Avatar, Erro } from '../components/comuns'
+import { EditorFoto, Erro } from '../components/comuns'
 import { FormTrocarSenha } from './TrocarSenha'
 
 export default function Perfil() {
@@ -12,7 +12,6 @@ export default function Perfil() {
   const [email, setEmail] = useState(eu?.email ?? '')
   const [erro, setErro] = useState<unknown>(null)
   const [ok, setOk] = useState(false)
-  const arquivo = useRef<HTMLInputElement>(null)
   if (!eu) return null
 
   const pronto = (novo: Eu) => {
@@ -25,21 +24,11 @@ export default function Perfil() {
       <h1>Meu perfil</h1>
       <section className="painel">
         <h2>Dados</h2>
-        <div className="perfil-avatar">
-          <Avatar u={eu} tamanho={64} />
-          <div>
-            <button className="btn" onClick={() => arquivo.current?.click()}>Trocar foto</button>
-            {eu.avatar_url && (
-              <button className="btn-link" onClick={async () => pronto(await del<Eu>('/api/auth/avatar'))}>Remover</button>
-            )}
-            <input ref={arquivo} type="file" accept="image/png,image/jpeg" hidden onChange={async (e) => {
-              const f = e.target.files?.[0]
-              e.target.value = ''
-              if (!f) return
-              try { pronto(await enviarArquivo<Eu>('/api/auth/avatar', f)) } catch (err) { setErro(err) }
-            }} />
-          </div>
-        </div>
+        <EditorFoto
+          u={eu}
+          enviar={async (f) => pronto(await enviarArquivo<Eu>('/api/auth/avatar', f))}
+          remover={async () => pronto(await del<Eu>('/api/auth/avatar'))}
+        />
         <form className="form" onSubmit={async (e) => {
           e.preventDefault()
           setErro(null); setOk(false)

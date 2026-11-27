@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KeyRound, Pencil, Plus } from 'lucide-react'
-import { get, patch, post, type Grupo, type UsuarioAdmin } from '../../api'
+import { del, enviarArquivo, get, patch, post, type Eu, type Grupo, type UsuarioAdmin } from '../../api'
 import { useAuth } from '../../auth'
-import { Avatar, Carregando, Erro, Modal } from '../../components/comuns'
+import { Avatar, Carregando, EditorFoto, Erro, Modal } from '../../components/comuns'
 import { dataHora } from '../../util'
 
 function senhaAleatoria(): string {
@@ -70,6 +70,7 @@ export default function AdminUsuarios() {
         <FormUsuario
           usuario={editando === 'novo' ? null : editando}
           grupos={grupos.data ?? []}
+          onFotoAlterada={recarregar}
           onFechar={() => setEditando(null)}
           onSalvo={() => { setEditando(null); recarregar() }}
         />
@@ -79,9 +80,16 @@ export default function AdminUsuarios() {
   )
 }
 
-function FormUsuario({ usuario, grupos, onFechar, onSalvo }: {
-  usuario: UsuarioAdmin | null; grupos: Grupo[]; onFechar: () => void; onSalvo: () => void
+function FormUsuario({ usuario, grupos, onFechar, onSalvo, onFotoAlterada }: {
+  usuario: UsuarioAdmin | null; grupos: Grupo[]; onFechar: () => void; onSalvo: () => void; onFotoAlterada: () => void
 }) {
+  const { eu, atualizar } = useAuth()
+  const [foto, setFoto] = useState(usuario?.avatar_url ?? null)
+  const fotoAlterada = async (novo: UsuarioAdmin) => {
+    setFoto(novo.avatar_url)
+    onFotoAlterada()
+    if (novo.id === eu?.id) atualizar(await get<Eu>('/api/auth/me'))  // atualiza a foto na barra lateral
+  }
   const [nome, setNome] = useState(usuario?.nome ?? '')
   const [login, setLogin] = useState(usuario?.login ?? '')
   const [email, setEmail] = useState(usuario?.email ?? '')
@@ -127,6 +135,13 @@ function FormUsuario({ usuario, grupos, onFechar, onSalvo }: {
 
   return (
     <Modal titulo={usuario ? `Editar ${usuario.nome}` : 'Novo usuário'} onFechar={onFechar}>
+      {usuario && (
+        <EditorFoto
+          u={{ nome: usuario.nome, avatar_url: foto }}
+          enviar={async (f) => fotoAlterada(await enviarArquivo<UsuarioAdmin>(`/api/admin/usuarios/${usuario.id}/avatar`, f))}
+          remover={async () => fotoAlterada(await del<UsuarioAdmin>(`/api/admin/usuarios/${usuario.id}/avatar`))}
+        />
+      )}
       <form className="form" onSubmit={(e) => { e.preventDefault(); salvar() }}>
         <label>Nome<input value={nome} onChange={(e) => setNome(e.target.value)} required autoFocus /></label>
         <label>Login<input value={login} onChange={(e) => setLogin(e.target.value)} required pattern="[A-Za-z0-9._@\-]+"

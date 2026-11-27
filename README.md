@@ -20,18 +20,42 @@ Existe também um usuário `teste` (administrador) e um projeto **"Automação (
 
 O banco é o PostgreSQL instalado como serviço do Windows, que já inicia sozinho com o computador (veja *Detalhes técnicos*).
 
+### Site sempre no ar
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\instalar-servico.ps1
+```
+
+Registra a tarefa agendada **"HyBrazil Cases"**, que inicia o site escondido toda vez que você entra no Windows, e já o inicia. O site fica em http://localhost:8000. Use `-Rede` para liberar o acesso pela rede interna.
+
+- **Supervisor:** `scripts\servico.ps1` mantém o servidor rodando e o reinicia sozinho se ele cair.
+- **Logs:** ficam em `runtime\logs` (`servico.log`, `servidor.log`, `servidor-erros.log`).
+- **Parar:** `instalar-servico.ps1 -Parar`. Para tirar do início automático, use `-Remover`.
+
+**Publicar mudanças no site:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\atualizar.ps1 -Testes
+```
+
+- Compila a interface numa pasta separada e confere o backend. Com `-Testes`, também roda os testes.
+- Só depois disso reinicia o servidor com a versão nova. Leva menos de um minuto, e o site fica fora do ar por poucos segundos.
+- Se algo falhar, nada é trocado e o site continua na versão anterior.
+- As mudanças no banco (`backend/migrations`) são aplicadas sozinhas quando o servidor reinicia.
+
 ## O que está pronto
 
 | Área | Recursos |
 |---|---|
 | Login | Usuário e senha (hash Argon2), "manter conectado", bloqueio de 5 min após 5 tentativas erradas, troca obrigatória da senha inicial, troca de senha e foto no perfil |
-| Usuários | Criar (com senha inicial gerada), editar, desativar (o histórico é mantido), redefinir senha, último acesso |
+| Usuários | Criar (com senha inicial gerada), editar (inclusive a **foto**), desativar (o histórico é mantido), redefinir senha, último acesso. Fotos são reduzidas no navegador para 512 px antes do envio |
 | Grupos e permissões | Grupos editáveis com permissões; as permissões do usuário são a soma de todos os seus grupos. Grupos padrão: **Administradores** (tudo) e **Usuários** (excluir apenas o que é seu) |
 | Projetos | Criar, editar, arquivar, favoritar (favoritos aparecem no topo da barra lateral) |
 | Quadro | 3 colunas com contadores, criação rápida ("Novo ticket…"), arrastar e soltar entre colunas e dentro delas, checkbox para completar, carregamento de 50 em 50 |
 | Ticket | Número `#N` por projeto, título editável, categoria, labels, responsável, descrição rica, linha do tempo (comentários + histórico de alterações, agrupados por dia), link copiável, exclusão conforme permissão |
 | Texto rico | Negrito, itálico, sublinhado, riscado, **cor do texto**, títulos, listas, citação, código na linha, **blocos de código com destaque de sintaxe** (com escolha de linguagem), links, atalhos Markdown (`**`, `#`, ```` ``` ````, `>`, `-`), `#123` vira link para o ticket |
-| Anexos | Pelo botão 📎, **colando (Ctrl+V)** ou **arrastando** para o editor. Imagens aparecem no texto, vídeos com player, PDF e outros arquivos como cartão para baixar |
+| Linguagens de código | Escolha na lista do bloco ou digite ```` ``` ```` + nome + espaço (ex.: ```` ```st ````). Inclui **Texto Estruturado** (`st`, CODESYS V2.3 e V3.5: palavras-chave, tipos, `T#5S`, `16#FF`, `%IX0.0`, pragmas `{attribute ...}`, TON/R_TRIG etc.) e **VBScript do Elipse E3** (`elipse`: objetos `Application`/`Screen`/`Parent`, funções E3Globals como `OPCIsGood` e métodos como `GetObject`/`WriteEx`), além de Python, C#, SQL, JSON, XML e outras. No modo *Automático* a linguagem é detectada entre as da lista |
+| Anexos | Pelo botão 📎, **colando (Ctrl+V)** ou **arrastando** para o editor (até 1 GB por arquivo). Imagens aparecem no texto; vídeos que o navegador toca (MP4/H.264, WebM) ganham player com avanço/retrocesso e link para baixar; AVI, MKV, PDF e outros viram cartão para baixar |
 | Filtros | Texto (título, descrição e comentários; sem acento; plurais; trechos de códigos como `52L`), labels (qualquer/todas), categoria, responsável ("Meus tickets", "Sem responsável") e ID. Os filtros ficam na URL, então o link filtrado pode ser compartilhado |
 | Labels | Globais (compartilhadas entre projetos), criadas direto no ticket; tela para editar, **mesclar** duplicadas e excluir |
 | Categorias | Tela de edição com nome, **ícone** (45 opções), **cor** e ordem. Uma categoria em uso é desativada em vez de excluída |
@@ -77,7 +101,7 @@ Abre a API com recarga automática e a interface em http://localhost:5173, com r
 powershell -ExecutionPolicy Bypass -File scripts\testes.ps1
 ```
 
-Roda os 20 testes automatizados do backend.
+Roda os testes automatizados do backend.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\compilar-frontend.ps1

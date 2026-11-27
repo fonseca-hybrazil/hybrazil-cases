@@ -3,7 +3,9 @@ import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { Doc, Node } from '../api'
 import { tamanhoArquivo } from '../util'
-import { lowlight } from './extensoes'
+import { destacarAuto, LINGUAGENS, lowlight } from './extensoes'
+
+const NOME_LINGUAGEM = new Map(LINGUAGENS.filter(([v]) => v && v !== 'plaintext'))
 
 const COR_OK = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\))$/i
 const URL_ANEXO = /^\/api\/anexos\/\d+\/arquivo$/
@@ -28,7 +30,7 @@ function hast(n: HastNo, k: number): ReactNode {
 function codigo(texto: string, lang: string | null): ReactNode {
   try {
     const arv = lang && lowlight.registered(lang) ? lowlight.highlight(lang, texto)
-      : lang === 'plaintext' ? null : lowlight.highlightAuto(texto)
+      : lang === 'plaintext' ? null : destacarAuto(texto)
     if (!arv) return texto
     return (arv.children as HastNo[]).map(hast)
   } catch {
@@ -96,7 +98,7 @@ function no(n: Node, k: number, projetoId?: number): ReactNode {
       const t = (n.content ?? []).map((c) => c.text ?? '').join('')
       const lang = typeof a.language === 'string' ? a.language : null
       return (
-        <pre key={k} data-lang={lang ?? undefined}><code className="hljs">{codigo(t, lang)}</code></pre>
+        <pre key={k} data-lang={lang ? NOME_LINGUAGEM.get(lang) ?? lang : undefined}><code className="hljs">{codigo(t, lang)}</code></pre>
       )
     }
     case 'image': {
@@ -110,7 +112,15 @@ function no(n: Node, k: number, projetoId?: number): ReactNode {
     }
     case 'video': {
       const src = urlSegura(a.src)
-      return src ? <video key={k} className="rt-video" src={src} controls preload="metadata" /> : null
+      if (!src) return null
+      return (
+        <figure key={k} className="rt-video-box">
+          <video className="rt-video" src={src} controls preload="metadata" />
+          <figcaption>
+            🎬 {a.nome ?? 'vídeo'} · <a href={`${src}?download=1`}>baixar</a>
+          </figcaption>
+        </figure>
+      )
     }
     case 'arquivo': {
       const src = urlSegura(a.src)

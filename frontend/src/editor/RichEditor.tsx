@@ -19,11 +19,16 @@ interface Props {
   compacto?: boolean
 }
 
+// O navegador sabe tocar este vídeo? (MP4/H.264, WebM e Ogg sim; AVI, MKV e WMV não, viram cartão para baixar)
+function videoTocavel(mime: string): boolean {
+  return mime.startsWith('video/') && document.createElement('video').canPlayType(mime) !== ''
+}
+
 export function inserirAnexo(editor: Editor, a: Anexo) {
   const attrs = { src: a.url, anexoId: a.id, nome: a.nome }
   const no = a.tipo_mime.startsWith('image/')
     ? { type: 'image', attrs: { src: a.url, alt: a.nome, anexoId: a.id } }
-    : a.tipo_mime.startsWith('video/')
+    : videoTocavel(a.tipo_mime)
       ? { type: 'video', attrs }
       : { type: 'arquivo', attrs: { ...attrs, tamanho: a.tamanho, mime: a.tipo_mime } }
   // insere depois da seleção atual (sem substituir um anexo recém-inserido que esteja selecionado)

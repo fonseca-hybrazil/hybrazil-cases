@@ -5,12 +5,21 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import Image from '@tiptap/extension-image'
 import { Placeholder } from '@tiptap/extensions'
 import { common, createLowlight } from 'lowlight'
+import vbscript from 'highlight.js/lib/languages/vbscript'
+import st from './linguagens/st'
+import elipse from './linguagens/elipse'
 
 export const lowlight = createLowlight(common)
+lowlight.register({ st, elipse, vbscript })
+lowlight.registerAlias({ st: ['iecst', 'codesys', 'scl'], elipse: ['e3', 'e3script'], vbscript: ['vbs'] })
 
+// Lista do editor. Digitando ``` + nome (ex.: ```st) o bloco já nasce com a linguagem.
 export const LINGUAGENS: [string, string][] = [
   ['', 'Automático'],
   ['plaintext', 'Texto'],
+  ['st', 'Texto Estruturado (CODESYS)'],
+  ['elipse', 'VBScript (Elipse E3)'],
+  ['vbscript', 'VBScript'],
   ['python', 'Python'],
   ['javascript', 'JavaScript'],
   ['typescript', 'TypeScript'],
@@ -29,6 +38,15 @@ export const LINGUAGENS: [string, string][] = [
   ['markdown', 'Markdown'],
   ['diff', 'Diff'],
 ]
+
+// No modo "Automático", a detecção só considera as linguagens da lista: entre as ~40 da biblioteca ela
+// errava muito em trechos curtos (Python virava CSS, JavaScript virava INI).
+const SUBCONJUNTO_AUTO = LINGUAGENS.map(([v]) => v).filter((v) => v && !['plaintext', 'diff', 'elipse'].includes(v))
+export function destacarAuto(texto: string) {
+  return lowlight.highlightAuto(texto, { subset: SUBCONJUNTO_AUTO })
+}
+// Versão do lowlight entregue ao editor, com a mesma detecção restrita.
+const lowlightEditor: typeof lowlight = { ...lowlight, highlightAuto: (t, o) => lowlight.highlightAuto(t, { subset: SUBCONJUNTO_AUTO, ...o }) }
 
 const anexoIdAttr = {
   anexoId: {
@@ -96,7 +114,7 @@ export function extensoes(placeholder: string) {
     }),
     TextStyle,
     Color,
-    CodeBlockLowlight.configure({ lowlight, defaultLanguage: null }),
+    CodeBlockLowlight.configure({ lowlight: lowlightEditor, defaultLanguage: null }),
     ImagemAnexo,
     VideoAnexo,
     ArquivoAnexo,
