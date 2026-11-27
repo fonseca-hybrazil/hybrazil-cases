@@ -27,11 +27,18 @@ passo() { echo; echo "== $*"; }
 passo "1. Python 3.12 e Node.js 22"
 command -v $PY >/dev/null || dnf install -y python3.12 python3.12-pip
 command -v rsync >/dev/null || dnf install -y rsync   # usado na restauracao dos anexos
+# A interface (Vite) precisa do Node 20.19+ ou 22.12+.
 node_ok() { command -v node >/dev/null && node -e 'const [a,b]=process.versions.node.split(".").map(Number); process.exit(a>22||(a===22&&b>=12)||(a===20&&b>=19)?0:1)'; }
 if ! node_ok; then
-    dnf module reset -y nodejs || true
-    dnf module install -y nodejs:22/common
+    if dnf -q repolist --enabled 2>/dev/null | grep -qi nodesource; then
+        # o servidor ja usa o repositorio da NodeSource: instala o Node de la (evita conflito com o do CentOS)
+        dnf install -y nodejs
+    else
+        dnf module reset -y nodejs || true
+        dnf module install -y nodejs:22/common
+    fi
 fi
+node_ok || { echo "Node.js $(node --version 2>/dev/null || echo ausente) e antigo: precisa do 20.19+ ou 22.12+." >&2; exit 1; }
 echo "Python: $($PY --version)  |  Node: $(node --version)"
 
 passo "2. Usuario de sistema '$APP_USER'"
