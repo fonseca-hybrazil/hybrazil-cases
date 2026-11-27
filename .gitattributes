@@ -1,0 +1,2 @@
+# Scripts do servidor Linux precisam de fim de linha LF, mesmo quando o repositório é usado no Windows.
+*.sh text eol=lf
