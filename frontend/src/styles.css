@@ -206,6 +206,8 @@ img.icone-projeto { object-fit: contain; flex: none; border-radius: 3px; }
 .filtro-lista { display: flex; flex-direction: column; gap: 2px; max-height: 200px; overflow-y: auto; }
 .filtro-op { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; cursor: pointer; font-size: 13px; }
 .filtro-op:hover { background: var(--superficie-2); }
+.filtro-qtd { margin-left: auto; font-size: 12px; color: var(--texto-suave); font-variant-numeric: tabular-nums; padding-right: 4px; }
+.filtro-qtd.zero { opacity: .45; }
 
 .colunas { display: flex; gap: 14px; padding: 4px 16px 16px; align-items: flex-start; flex: 1; overflow-x: auto; }
 .coluna { flex: 1 1 0; min-width: 290px; max-width: 420px; background: #eef1f4; border-radius: 10px; display: flex; flex-direction: column; max-height: calc(100vh - 90px); box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }

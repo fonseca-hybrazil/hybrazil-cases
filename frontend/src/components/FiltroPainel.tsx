@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { FILTROS_VAZIOS, type Filtros } from '../api'
+import { FILTROS_VAZIOS, get, type Filtros, type Label } from '../api'
 import { useAuth } from '../auth'
 import { IconeCategoria } from '../icones'
 import { useCategorias, useLabels, useUsuarios } from '../queries'
@@ -10,10 +11,19 @@ function alternar(lista: number[], v: number): number[] {
   return lista.includes(v) ? lista.filter((x) => x !== v) : [...lista, v]
 }
 
-export default function FiltroPainel({ filtros, onChange, onFechar }: {
-  filtros: Filtros; onChange: (f: Filtros) => void; onFechar: () => void
+export default function FiltroPainel({ projetoId, filtros, onChange, onFechar }: {
+  projetoId: number; filtros: Filtros; onChange: (f: Filtros) => void; onFechar: () => void
 }) {
-  const { data: labels = [] } = useLabels()
+  const { data: todasLabels = [] } = useLabels()
+  // quantos tickets do projeto têm cada label: mostra o número e ordena da mais usada para a menos usada
+  const { data: usoLabels } = useQuery({
+    queryKey: ['labels-uso', projetoId],
+    queryFn: () => get<(Label & { uso: number })[]>(`/api/labels-uso?projeto_id=${projetoId}`),
+    staleTime: 10_000,
+  })
+  const uso = useMemo(() => new Map((usoLabels ?? []).map((l) => [l.id, l.uso])), [usoLabels])
+  const labels = useMemo(() => [...todasLabels].sort((a, b) =>
+    (uso.get(b.id) ?? 0) - (uso.get(a.id) ?? 0) || a.nome.localeCompare(b.nome, 'pt-BR')), [todasLabels, uso])
   const { data: cats = [] } = useCategorias()
   const { data: usuarios = [] } = useUsuarios()
   const { eu } = useAuth()
@@ -65,6 +75,7 @@ export default function FiltroPainel({ filtros, onChange, onFechar }: {
                 <input type="checkbox" checked={filtros.label.includes(l.id)}
                        onChange={() => set({ label: alternar(filtros.label, l.id) })} />
                 <LabelPill label={l} />
+                {usoLabels && <span className={'filtro-qtd' + (uso.get(l.id) ? '' : ' zero')}>{uso.get(l.id) ?? 0}</span>}
               </label>
             ))}
             {labels.length === 0 && <span className="suave">Nenhuma label criada.</span>}

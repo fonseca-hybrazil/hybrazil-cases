@@ -193,6 +193,8 @@ def test_labels_globais_mesclar_e_categoria_em_uso(admin, ana, projeto):
     assert admin.post(f"/api/labels/{b['id']}/mesclar", json={"destino_id": a["id"]}).status_code == 204
     uso = {l["nome"]: l["uso"] for l in admin.get("/api/labels-uso").json()}
     assert uso == {"Lagoa Grande": 3}
+    por_projeto = {l["nome"]: l["uso"] for l in admin.get("/api/labels-uso", params={"projeto_id": outro}).json()}
+    assert por_projeto == {"Lagoa Grande": 2}
 
     cat = admin.get("/api/categorias").json()[0]
     novo(admin, projeto, "com categoria", categoria_id=cat["id"])

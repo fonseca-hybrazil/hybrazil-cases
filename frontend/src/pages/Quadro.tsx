@@ -102,7 +102,7 @@ export default function QuadroPagina() {
             <Filter size={15} /> Filtro{qtdFiltros ? ` (${qtdFiltros})` : ''}
           </button>
           {painel && (
-            <FiltroPainel filtros={filtros} onChange={setFiltros} onFechar={() => setPainel(false)} />
+            <FiltroPainel projetoId={pid} filtros={filtros} onChange={setFiltros} onFechar={() => setPainel(false)} />
           )}
         </div>
         {ativos && (

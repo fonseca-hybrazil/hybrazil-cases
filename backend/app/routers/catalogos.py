@@ -1,5 +1,5 @@
 """Categorias e labels."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.orm import Session
 
@@ -72,11 +72,17 @@ def listar_labels(_: Usuario = Depends(usuario_logado), db: Session = Depends(ge
 
 
 @router.get("/labels-uso", response_model=list[LabelComUso])
-def listar_labels_uso(_: Usuario = Depends(usuario_logado), db: Session = Depends(get_db)):
+def listar_labels_uso(
+    projeto_id: int | None = Query(None, ge=1),   # informado: conta só os tickets deste projeto
+    _: Usuario = Depends(usuario_logado), db: Session = Depends(get_db),
+):
+    filtro = [Ticket.excluido_em.is_(None)]
+    if projeto_id:
+        filtro.append(Ticket.projeto_id == projeto_id)
     uso = (
         select(ticket_labels.c.label_id, func.count().label("n"))
         .join(Ticket, Ticket.id == ticket_labels.c.ticket_id)
-        .where(Ticket.excluido_em.is_(None))
+        .where(*filtro)
         .group_by(ticket_labels.c.label_id).subquery()
     )
     q = select(Label, func.coalesce(uso.c.n, 0)).outerjoin(uso, uso.c.label_id == Label.id).order_by(
