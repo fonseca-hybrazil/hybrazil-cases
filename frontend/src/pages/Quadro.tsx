@@ -114,6 +114,7 @@ export default function QuadroPagina() {
       {p.arquivado && <div className="aviso">Este projeto está arquivado: não é possível criar tickets.</div>}
       <Board
         pid={pid}
+        chave={`${pid}?${params}`}
         arquivado={p.arquivado}
         dados={colunas.map((c) => c.data)}
         erro={colunas.find((c) => c.error)?.error}
@@ -134,9 +135,10 @@ export default function QuadroPagina() {
 }
 
 function Board({
-  pid, arquivado, dados, erro, totaisSemFiltro, filtrado, onMais, abrir,
+  pid, chave, arquivado, dados, erro, totaisSemFiltro, filtrado, onMais, abrir,
 }: {
   pid: number
+  chave: string           // projeto + filtros: quando muda, as colunas recomeçam
   arquivado: boolean
   dados: (Coluna | undefined)[]
   erro: unknown
@@ -169,14 +171,26 @@ function Board({
     return () => clearTimeout(t)
   }, [recebeu])
 
+  // Enquanto uma coluna carrega a próxima página, ela continua com os cartões (e o total) que já tinha:
+  // assim a lista não esvazia e a rolagem fica onde está. Ao trocar de projeto ou de filtro (outra
+  // "chave"), a coluna recomeça vazia, para não mostrar cartões de outro lugar.
+  const [totais, setTotais] = useState<Record<Status, number>>({ pendente: 0, andamento: 0, completado: 0 })
+  const chaveAnterior = useRef(chave)
   useEffect(() => {
     if (arrastando || travado) return
-    setCols({
-      pendente: dados[0]?.tickets ?? [],
-      andamento: dados[1]?.tickets ?? [],
-      completado: dados[2]?.tickets ?? [],
-    })
-  }, [dados[0], dados[1], dados[2], arrastando, travado]) // eslint-disable-line react-hooks/exhaustive-deps
+    const mesma = chaveAnterior.current === chave
+    chaveAnterior.current = chave
+    setCols((c) => ({
+      pendente: dados[0]?.tickets ?? (mesma ? c.pendente : []),
+      andamento: dados[1]?.tickets ?? (mesma ? c.andamento : []),
+      completado: dados[2]?.tickets ?? (mesma ? c.completado : []),
+    }))
+    setTotais((t) => ({
+      pendente: dados[0]?.total ?? (mesma ? t.pendente : 0),
+      andamento: dados[1]?.total ?? (mesma ? t.andamento : 0),
+      completado: dados[2]?.total ?? (mesma ? t.completado : 0),
+    }))
+  }, [dados[0], dados[1], dados[2], arrastando, travado, chave]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const recarregar = async () => {
     await Promise.all([
@@ -277,12 +291,12 @@ function Board({
       >
         {celular && (
           <div className={'abas-quadro' + (arrastando ? ' arrastando' : '')}>
-            {STATUS.map((s, i) => (
+            {STATUS.map((s) => (
               <AbaColuna
                 key={s}
                 status={s}
                 ativa={aba === s}
-                total={dados[i]?.total ?? 0}
+                total={totais[s]}
                 totalSemFiltro={totaisSemFiltro[s]}
                 filtrado={filtrado}
                 recebeu={recebeu === s}
@@ -298,7 +312,7 @@ function Board({
               pid={pid}
               status={s}
               tickets={cols[s]}
-              total={dados[STATUS.indexOf(s)]?.total ?? 0}
+              total={totais[s]}
               totalSemFiltro={totaisSemFiltro[s]}
               filtrado={filtrado}
               arquivado={arquivado}
