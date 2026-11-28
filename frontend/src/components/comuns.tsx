@@ -152,6 +152,19 @@ export function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
   return <div className="carregando">{texto}</div>
 }
 
+/** true enquanto a media query valer (ex.: '(max-width: 800px)'); acompanha mudanças de tamanho/orientação. */
+export function useMidia(consulta: string): boolean {
+  const [vale, setVale] = useState(() => typeof window !== 'undefined' && window.matchMedia(consulta).matches)
+  useEffect(() => {
+    const m = window.matchMedia(consulta)
+    const atualizar = () => setVale(m.matches)
+    atualizar()
+    m.addEventListener('change', atualizar)
+    return () => m.removeEventListener('change', atualizar)
+  }, [consulta])
+  return vale
+}
+
 export function useDebounce<T>(valor: T, ms = 300): T {
   const [v, setV] = useState(valor)
   useEffect(() => {

@@ -222,6 +222,26 @@ img.icone-projeto { object-fit: contain; flex: none; border-radius: 3px; }
 .btn-mais { border: 1px dashed #c4cad1; background: transparent; border-radius: 6px; padding: 8px; color: var(--texto-suave); cursor: pointer; font-size: 12px; }
 .btn-mais:hover { background: #fff; }
 
+/* Abas de coluna (celular) */
+.abas-quadro { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; padding: 6px 16px 8px; background: var(--gradiente); background-attachment: fixed; }
+.aba-coluna { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid transparent; border-radius: 8px; padding: 6px 4px; background: rgba(255, 255, 255, .25); color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform .12s, background .12s, border-color .12s; }
+.aba-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.aba-cont { font-size: 12px; font-weight: 700; background: rgba(255, 255, 255, .9); border-radius: 10px; padding: 0 8px; line-height: 18px; color: var(--texto); }
+.aba-coluna.ativa.aba-pendente { background: var(--pendente); }
+.aba-coluna.ativa.aba-andamento { background: var(--andamento); }
+.aba-coluna.ativa.aba-completado { background: var(--completado); }
+.abas-quadro.arrastando .aba-coluna:not(.ativa) { border-style: dashed; border-color: rgba(255, 255, 255, .9); }
+.aba-coluna.sobre { transform: scale(1.06); border-style: solid !important; border-color: #fff !important; background: rgba(255, 255, 255, .45); }
+.aba-coluna.recebeu { animation: aba-recebeu .5s ease-in-out 2; }
+@keyframes aba-recebeu { 50% { transform: scale(1.08); box-shadow: 0 0 0 3px rgba(255, 255, 255, .8); } }
+.colunas-abas { padding-top: 0; }
+.colunas-abas .coluna-topo { display: none; }
+.colunas-abas .coluna { border-radius: 10px; }
+@media (pointer: coarse) {
+  /* toque: segurar o cartão inicia o arrasto; evita o menu de "copiar/selecionar" do celular */
+  .cartao-arrastavel { touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+}
+
 .cartao { background: #fff; border-radius: 6px; box-shadow: var(--sombra-cartao); padding: 9px 10px 7px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; user-select: none; }
 .cartao:hover { box-shadow: 0 2px 6px rgba(15, 23, 42, .15); }
 .cartao.fantasma { box-shadow: var(--sombra-flutuante); transform: rotate(2deg); cursor: grabbing; }
@@ -419,6 +439,48 @@ img.icone-projeto { object-fit: contain; flex: none; border-radius: 3px; }
 .membros-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px; max-height: 220px; overflow-y: auto; }
 .perfil-avatar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 
+/* -------------------------------------------------------------- dashboard */
+.dash { max-width: 1280px; }
+.dash .pagina-topo h1 { display: flex; align-items: center; gap: 8px; flex: none; }
+.dash-titulo-icone { color: var(--primaria); }
+.dash-atualizando { color: var(--texto-suave); font-size: 12px; }
+.dash-filtros { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; margin-bottom: 16px; }
+.dash-filtros label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 12px; color: var(--texto-suave); min-width: 150px; flex: 1 1 150px; max-width: 240px; }
+.dash-filtros select, .dash-filtros input { color: var(--texto); font-weight: 400; font-size: 13px; }
+.btn-limpar-dash { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--primaria); font-weight: 700; cursor: pointer; padding: 8px 4px; }
+.dash-numeros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.dash-numero { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; }
+.dash-numero-titulo { font-size: 12px; font-weight: 700; color: var(--texto-suave); }
+.dash-numero-valor { font-size: 26px; font-weight: 900; line-height: 1.2; }
+.dash-numero-detalhe { font-size: 12px; color: var(--texto-suave); }
+.dash-painel h2 { font-size: 15px; font-weight: 900; margin-bottom: 10px; }
+.dash-painel-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.dash-legenda { font-size: 12px; color: var(--texto-suave); display: inline-flex; align-items: center; gap: 6px; }
+.dash-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 6px; }
+.dash-nota { font-size: 12px; color: var(--texto-suave); margin-top: 8px; }
+.dash-vazio { color: var(--texto-suave); font-size: 13px; padding: 12px 0; }
+.dash-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.dash-largo { grid-column: 1 / -1; }
+.dash-meses { overflow-x: auto; }
+.dash-meses svg { display: block; }
+.dash-grade-linha { stroke: #e5e8eb; stroke-width: 1; }
+.dash-eixo { font-size: 11px; fill: #8b96a3; }
+.dash-mes { cursor: pointer; }
+.dash-mes-fundo { fill: transparent; }
+.dash-mes.foco .dash-mes-fundo { fill: rgba(30, 136, 229, .07); }
+.dash-dica { font-size: 12px; color: var(--texto-suave); min-height: 18px; margin-top: 4px; }
+.dash-barras { display: flex; flex-direction: column; gap: 2px; }
+.dash-barra { display: grid; grid-template-columns: minmax(90px, 34%) 1fr auto; align-items: center; gap: 10px; border: 0; background: transparent; padding: 4px 6px; border-radius: 6px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.dash-barra:hover:not(:disabled) { background: var(--superficie-2); }
+.dash-barra.fixo { cursor: default; }
+.dash-barra.selecionado { background: rgba(30, 136, 229, .12); box-shadow: inset 0 0 0 1px var(--primaria); }
+.dash-barra.sem .dash-barra-nome { color: var(--texto-suave); font-style: italic; }
+.dash-barra-nome { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-barra-trilho { height: 12px; background: #f0f2f4; border-radius: 6px; overflow: hidden; }
+.dash-barra-cheio { display: block; height: 100%; border-radius: 6px; min-width: 2px; }
+.dash-barra-num { font-size: 13px; font-weight: 700; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.dash-barra-num small { font-weight: 400; color: var(--texto-suave); font-size: 11px; }
+
 /* ---------------------------------------------------------------- celular */
 @media (max-width: 800px) {
   .side { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; transform: translateX(-100%); transition: transform .2s; }
@@ -435,4 +497,8 @@ img.icone-projeto { object-fit: contain; flex: none; border-radius: 3px; }
   .ticket-labels, .ticket-campos, .descricao, .add-descricao { margin-left: 0; width: auto; }
   .filtro-painel { width: min(340px, calc(100vw - 40px)); }
   .tabela { font-size: 12px; }
+  .dash-numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-grade { grid-template-columns: minmax(0, 1fr); }
+  .dash-filtros label { max-width: none; min-width: 130px; }
+  .dash-barra { grid-template-columns: minmax(80px, 38%) 1fr auto; gap: 6px; }
 }

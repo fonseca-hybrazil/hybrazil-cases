@@ -8,6 +8,7 @@ import TrocarSenha from './pages/TrocarSenha'
 import Inicio from './pages/Inicio'
 import QuadroPagina from './pages/Quadro'
 import Perfil from './pages/Perfil'
+import Dashboard from './pages/Dashboard'
 import AdminUsuarios from './pages/admin/Usuarios'
 import AdminGrupos from './pages/admin/Grupos'
 import AdminCategorias from './pages/admin/Categorias'
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/p/:projetoId" element={<QuadroPagina />} />
         <Route path="/p/:projetoId/t/:numero" element={<QuadroPagina />} />
         <Route path="/perfil" element={<Perfil />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin/usuarios" element={<ComPermissao p="admin_usuarios"><AdminUsuarios /></ComPermissao>} />
         <Route path="/admin/grupos" element={<ComPermissao p="admin_usuarios"><AdminGrupos /></ComPermissao>} />
         <Route path="/admin/categorias" element={<ComPermissao p="admin_categorias"><AdminCategorias /></ComPermissao>} />

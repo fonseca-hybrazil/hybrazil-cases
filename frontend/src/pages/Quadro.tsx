@@ -2,8 +2,8 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  closestCorners, DndContext, DragOverlay, PointerSensor, useDroppable, useSensor, useSensors,
-  type DragEndEvent, type DragOverEvent, type DragStartEvent,
+  closestCorners, DndContext, DragOverlay, MouseSensor, PointerSensor, pointerWithin, TouchSensor, useDroppable,
+  useSensor, useSensors, type CollisionDetection, type DragEndEvent, type DragOverEvent, type DragStartEvent,
 } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -12,7 +12,7 @@ import {
   filtrosAtivos, filtrosDeParams, filtrosParaParams, get, post, STATUS, STATUS_NOME,
   type Coluna, type Filtros, type Projeto, type Status, type TicketResumo,
 } from '../api'
-import { Avatar, CategoriaBadge, Carregando, Erro, LabelPill, useDebounce } from '../components/comuns'
+import { Avatar, CategoriaBadge, Carregando, Erro, LabelPill, useDebounce, useMidia } from '../components/comuns'
 import FiltroPainel from '../components/FiltroPainel'
 import { IconeProjeto } from '../components/IconeProjeto'
 import { porId, useCategorias, useLabels, useUsuarios } from '../queries'
@@ -21,6 +21,14 @@ import { alternarFavorito } from './Inicio'
 
 const PAGINA = 50
 type Cols = Record<Status, TicketResumo[]>
+
+const ehAba = (id: string | number) => typeof id === 'string' && id.startsWith('aba-')
+
+// No celular: se o dedo está sobre uma aba de coluna, ela é o destino; senão, o cálculo normal do quadro.
+const colisaoCelular: CollisionDetection = (args) => {
+  const abas = pointerWithin(args).filter((c) => ehAba(c.id))
+  return abas.length ? abas : closestCorners(args)
+}
 
 export default function QuadroPagina() {
   const { projetoId, numero } = useParams()
@@ -142,7 +150,24 @@ function Board({
   const [arrastando, setArrastando] = useState<TicketResumo | null>(null)
   const [travado, setTravado] = useState(false)
   const [erroMover, setErroMover] = useState<unknown>(null)
-  const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+
+  // Computador: arrasta ao mover o mouse 6px (como sempre foi).
+  // Tela de toque: só arrasta depois de segurar o dedo ~¼ s no cartão; deslizar normal rola a tela.
+  const toque = useMidia('(pointer: coarse)')
+  const sensorPonteiro = useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  const sensorMouse = useSensor(MouseSensor, { activationConstraint: { distance: 6 } })
+  const sensorToque = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } })
+  const sensores = useSensors(...(toque ? [sensorToque, sensorMouse] : [sensorPonteiro]))
+
+  // Celular (tela estreita): uma coluna por vez, com abas; soltar um cartão numa aba move para aquela coluna.
+  const celular = useMidia('(max-width: 800px)')
+  const [aba, setAba] = useState<Status>('pendente')
+  const [recebeu, setRecebeu] = useState<Status | null>(null)
+  useEffect(() => {
+    if (!recebeu) return
+    const t = setTimeout(() => setRecebeu(null), 1500)
+    return () => clearTimeout(t)
+  }, [recebeu])
 
   useEffect(() => {
     if (arrastando || travado) return
@@ -163,6 +188,7 @@ function Board({
 
   const ondeEsta = (id: string | number, c: Cols = cols): Status | null => {
     if (typeof id === 'string' && id.startsWith('col-')) return id.slice(4) as Status
+    if (ehAba(id)) return (id as string).slice(4) as Status
     for (const s of STATUS) if (c[s].some((t) => t.id === id)) return s
     return null
   }
@@ -197,6 +223,7 @@ function Board({
   const inicio = (e: DragStartEvent) => {
     const s = ondeEsta(e.active.id)
     setArrastando(s ? cols[s].find((t) => t.id === e.active.id) ?? null : null)
+    if (toque) navigator.vibrate?.(30)   // aviso tátil de que o cartão "pegou" (Android)
   }
 
   const sobre = ({ active, over }: DragOverEvent) => {
@@ -208,7 +235,7 @@ function Board({
       const item = c[de].find((t) => t.id === active.id)
       if (!item) return c
       const destino = c[para].filter((t) => t.id !== active.id)
-      const idx = destino.findIndex((t) => t.id === over.id)
+      const idx = ehAba(over.id) ? 0 : destino.findIndex((t) => t.id === over.id)   // aba: vai para o topo
       destino.splice(idx >= 0 ? idx : destino.length, 0, { ...item, status: para })
       return { ...c, [de]: c[de].filter((t) => t.id !== active.id), [para]: destino }
     })
@@ -220,9 +247,11 @@ function Board({
     if (!over || !original) return
     const para = ondeEsta(over.id)
     if (!para) return
+    const naAba = ehAba(over.id)
+    if (naAba && para === original.status) return   // soltou na aba da própria coluna: nada muda
     let lista = cols[para]
     const de = lista.findIndex((t) => t.id === active.id)
-    const ate = typeof over.id === 'number' ? lista.findIndex((t) => t.id === over.id) : lista.length - 1
+    const ate = naAba ? 0 : typeof over.id === 'number' ? lista.findIndex((t) => t.id === over.id) : lista.length - 1
     if (de >= 0 && ate >= 0 && de !== ate) lista = arrayMove(lista, de, ate)
     setCols((c) => ({ ...c, [para]: lista }))
     const pos = lista.findIndex((t) => t.id === active.id)
@@ -231,6 +260,7 @@ function Board({
     const posOriginal = antes.findIndex((t) => t.id === original.id)
     const aposOriginal = posOriginal > 0 ? antes[posOriginal - 1].id : null
     if (para === original.status && aposId === aposOriginal) return
+    if (naAba) setRecebeu(para)
     mover(original, para, aposId)
   }
 
@@ -239,20 +269,36 @@ function Board({
       <Erro erro={erro || erroMover} />
       <DndContext
         sensors={sensores}
-        collisionDetection={closestCorners}
+        collisionDetection={celular ? colisaoCelular : closestCorners}
         onDragStart={inicio}
         onDragOver={sobre}
         onDragEnd={fim}
         onDragCancel={() => setArrastando(null)}
       >
-        <div className="colunas">
-          {STATUS.map((s, i) => (
+        {celular && (
+          <div className={'abas-quadro' + (arrastando ? ' arrastando' : '')}>
+            {STATUS.map((s, i) => (
+              <AbaColuna
+                key={s}
+                status={s}
+                ativa={aba === s}
+                total={dados[i]?.total ?? 0}
+                totalSemFiltro={totaisSemFiltro[s]}
+                filtrado={filtrado}
+                recebeu={recebeu === s}
+                onClick={() => setAba(s)}
+              />
+            ))}
+          </div>
+        )}
+        <div className={'colunas' + (celular ? ' colunas-abas' : '')}>
+          {STATUS.filter((s) => !celular || s === aba).map((s) => (
             <ColunaView
               key={s}
               pid={pid}
               status={s}
               tickets={cols[s]}
-              total={dados[i]?.total ?? 0}
+              total={dados[STATUS.indexOf(s)]?.total ?? 0}
               totalSemFiltro={totaisSemFiltro[s]}
               filtrado={filtrado}
               arquivado={arquivado}
@@ -268,6 +314,24 @@ function Board({
         </DragOverlay>
       </DndContext>
     </>
+  )
+}
+
+// Aba de coluna (só no celular): troca a coluna visível e recebe cartões arrastados.
+function AbaColuna({ status, ativa, total, totalSemFiltro, filtrado, recebeu, onClick }: {
+  status: Status; ativa: boolean; total: number; totalSemFiltro: number; filtrado: boolean; recebeu: boolean
+  onClick: () => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `aba-${status}` })
+  return (
+    <button
+      ref={setNodeRef}
+      className={`aba-coluna aba-${status}` + (ativa ? ' ativa' : '') + (isOver ? ' sobre' : '') + (recebeu ? ' recebeu' : '')}
+      onClick={onClick}
+    >
+      <span className="aba-nome">{STATUS_NOME[status]}</span>
+      <span className="aba-cont">{filtrado ? `${total}/${totalSemFiltro}` : total}</span>
+    </button>
   )
 }
 
@@ -377,6 +441,7 @@ const CartaoArrastavel = memo(function CartaoArrastavel({ t, abrir, alternarConc
   return (
     <div
       ref={setNodeRef}
+      className="cartao-arrastavel"
       style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.35 : 1 }}
       {...attributes}
       {...listeners}
@@ -408,6 +473,8 @@ const Cartao = memo(function Cartao({ t, fantasma, alternarConcluido }: {
           title={feito ? 'Reabrir' : 'Marcar como completado'}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           onChange={() => alternarConcluido?.(t)}
         />
         <span className="cartao-titulo">{t.titulo}</span>

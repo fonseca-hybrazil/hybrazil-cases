@@ -79,7 +79,8 @@ O backup **`pos-migracao-ora`** guarda o estado logo após a migração do Ora (
 | Usuários | Criar (com senha inicial gerada), editar (inclusive a **foto**), desativar (o histórico é mantido), redefinir senha, último acesso. Fotos são reduzidas no navegador para 512 px antes do envio |
 | Grupos e permissões | Grupos editáveis com permissões; as permissões do usuário são a soma de todos os seus grupos. Grupos padrão: **Administradores** (tudo) e **Usuários** (excluir apenas o que é seu) |
 | Projetos | Criar, editar, arquivar, favoritar (favoritos aparecem no topo da barra lateral). **Ícone do projeto** (barra lateral, página inicial e quadro): um dos ~1.600 ícones padrão (Lucide), com busca em português nos sugeridos e cor à escolha, ou uma imagem da **biblioteca de ícones**, onde quem administra projetos envia PNG, SVG, ICO, JPG, WebP ou GIF (até 512 KB; SVGs com script ou conteúdo externo são recusados) |
-| Quadro | 3 colunas com contadores, criação rápida ("Novo ticket…"), arrastar e soltar entre colunas e dentro delas, checkbox para completar, carregamento de 50 em 50 |
+| Quadro | 3 colunas com contadores, criação rápida ("Novo ticket…"), arrastar e soltar entre colunas e dentro delas, checkbox para completar, carregamento automático de 50 em 50 ao rolar |
+| Dashboard | Números do período (total, abertos, completados, tempo até concluir), **cases por mês** (criados × concluídos), por **categoria**, **label** (15 mais usadas + outras) e **responsável** (inclui "sem categoria" e "sem responsável"). Filtros de período, projeto, status, categoria, label e responsável; clicar numa barra ou num mês aplica o filtro. Os filtros ficam na URL |
 | Ticket | Número `#N` por projeto, título editável, categoria, labels, responsável, descrição rica, linha do tempo (comentários + histórico de alterações, agrupados por dia), link copiável, exclusão conforme permissão |
 | Texto rico | Negrito, itálico, sublinhado, riscado, **cor do texto**, títulos, listas com marcadores e numeradas (`-` ou `1.` + espaço), **listas de tarefas** (`[ ]` + espaço; qualquer pessoa marca a caixa direto no comentário salvo, fica registrado quem marcou e o cartão mostra o progresso, ex.: 3/8), citação, código na linha, **blocos de código com destaque de sintaxe** (com escolha de linguagem), links, atalhos Markdown (`**`, `#`, ```` ``` ````, `>`, `-`), `#123` vira link para o ticket |
 | Linguagens de código | Escolha na lista do bloco ou digite ```` ``` ```` + nome + espaço (ex.: ```` ```st ````). Inclui **Texto Estruturado** (`st`, CODESYS V2.3 e V3.5: palavras-chave, tipos, `T#5S`, `16#FF`, `%IX0.0`, pragmas `{attribute ...}`, TON/R_TRIG etc.) e **VBScript do Elipse E3** (`elipse`: objetos `Application`/`Screen`/`Parent`, funções E3Globals como `OPCIsGood` e métodos como `GetObject`/`WriteEx`), além de Python, C#, SQL, JSON, XML e outras. No modo *Automático* a linguagem é detectada entre as da lista |
@@ -88,7 +89,7 @@ O backup **`pos-migracao-ora`** guarda o estado logo após a migração do Ora (
 | Labels | Globais (compartilhadas entre projetos), criadas direto no ticket; tela para editar, **mesclar** duplicadas e excluir |
 | Categorias | Tela de edição com nome, **ícone** (45 opções), **cor** e ordem. Uma categoria em uso é desativada em vez de excluída |
 | Exclusões | Tickets e comentários excluídos saem da tela, mas continuam no banco (exclusão lógica) |
-| Celular | Layout adaptado para telas pequenas |
+| Celular | Layout adaptado para telas pequenas. No quadro, uma coluna por vez com abas; **segure o cartão** para arrastar e solte numa aba para mudar de coluna (deslizar normal rola a tela). No computador o quadro continua com as 3 colunas e o arrasto de sempre |
 
 ## Estrutura
 

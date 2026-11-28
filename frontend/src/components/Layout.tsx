@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
-  Archive, ChevronDown, FolderKanban, LogOut, Menu, Settings, Shapes, Star, Tag, User, Users, UsersRound,
+  Archive, BarChart3, ChevronDown, FolderKanban, LogOut, Menu, Settings, Shapes, Star, Tag, User, Users, UsersRound,
 } from 'lucide-react'
 import { useAuth } from '../auth'
 import { useProjetos } from '../queries'
@@ -36,6 +36,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           <span>HyBrazil <b>Cases</b></span>
         </Link>
         <nav className="side-nav">
+          <NavLink to="/dashboard" className="side-item" onClick={() => setAberta(false)}>
+            <BarChart3 size={14} /> <span className="side-texto">Dashboard</span>
+          </NavLink>
           {favoritos.length > 0 && <div className="side-titulo">Favoritos</div>}
           {favoritos.map(item)}
           <div className="side-titulo">Projetos</div>
