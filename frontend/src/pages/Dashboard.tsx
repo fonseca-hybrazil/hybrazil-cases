@@ -173,7 +173,7 @@ export default function Dashboard() {
             <div className="dash-painel-topo">
               <h2>Cases por mês</h2>
               <span className="dash-legenda">
-                <i style={{ background: 'var(--primaria)' }} /> criados <i style={{ background: 'var(--completado)' }} /> concluídos
+                <i style={{ background: 'var(--azul-hy)' }} /> criados <i style={{ background: 'var(--completado)' }} /> concluídos
               </span>
             </div>
             <GraficoMeses
@@ -347,7 +347,7 @@ function GraficoMeses({ meses, onMes }: {
               onClick={() => onMes(m.mes)}
             >
               <rect x={ESQ + i * grupo} y={TOPO} width={grupo} height={ALT - TOPO - BASE + 4} className="dash-mes-fundo" />
-              <rect x={x} y={y(m.criados)} width={b} height={y(0) - y(m.criados)} rx={2} fill="var(--primaria)" />
+              <rect x={x} y={y(m.criados)} width={b} height={y(0) - y(m.criados)} rx={2} fill="var(--azul-hy)" />
               <rect x={x + b + 2} y={y(m.concluidos)} width={b} height={y(0) - y(m.concluidos)} rx={2} fill="var(--completado)" />
               {(i % cadaRotulo === 0 || foco === i) && (
                 <text x={ESQ + i * grupo + grupo / 2} y={ALT - 6} textAnchor="middle" className="dash-eixo">{nomeMes(m.mes)}</text>

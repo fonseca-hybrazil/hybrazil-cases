@@ -7,6 +7,7 @@ import { useAuth } from '../auth'
 import { useProjetos } from '../queries'
 import { Avatar, Popover } from './comuns'
 import { IconeProjeto } from './IconeProjeto'
+import { LogoCases } from './Logo'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { eu, sair, pode } = useAuth()
@@ -31,9 +32,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className={'app' + (aberta ? ' side-aberta' : '')}>
       <aside className="side">
-        <Link to="/" className="logo" onClick={() => setAberta(false)}>
-          <img src="/favicon.svg" alt="" width={26} height={26} />
-          <span>HyBrazil <b>Cases</b></span>
+        <Link to="/" className="logo" onClick={() => setAberta(false)} title="Início">
+          <LogoCases largura={196} />
         </Link>
         <nav className="side-nav">
           <NavLink to="/dashboard" className="side-item" onClick={() => setAberta(false)}>

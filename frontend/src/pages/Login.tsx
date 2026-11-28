@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Erro } from '../components/comuns'
+import { LogoCases } from '../components/Logo'
 
 export default function Login() {
   const { eu, entrar } = useAuth()
@@ -33,8 +34,7 @@ export default function Login() {
     <div className="tela-login">
       <form className="cartao-login" onSubmit={enviar}>
         <div className="logo logo-grande">
-          <img src="/favicon.svg" alt="" width={40} height={40} />
-          <span>HyBrazil <b>Cases</b></span>
+          <LogoCases largura={250} cor="#005959" corCases="#078686" />
         </div>
         <label>
           Usuário
