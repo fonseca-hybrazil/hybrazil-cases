@@ -50,6 +50,20 @@ O script baixa o código, reinstala as dependências, recompila a interface e re
 
 > Faça um backup antes de atualizações grandes. As atualizações de banco não são desfeitas ao voltar o código.
 
+## Esqueci a senha do administrador
+
+Se ninguém conseguir entrar como administrador, dá para redefinir a senha pelo próprio servidor:
+
+```bash
+cd /opt/hybrazil-cases
+sudo bash scripts/producao/redefinir-senha.sh            # lista quem administra usuários
+sudo bash scripts/producao/redefinir-senha.sh <login>    # gera uma senha provisória
+```
+
+A senha provisória aparece só na tela, e no primeiro acesso o sistema exige trocá-la. O comando também desbloqueia o usuário e encerra as sessões abertas dele.
+
+Para outros usuários, um administrador redefine a senha pelo próprio site, em *Administração → Usuários*.
+
 ## Comandos úteis
 
 ```bash
