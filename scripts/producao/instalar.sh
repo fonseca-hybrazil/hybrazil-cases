@@ -89,8 +89,11 @@ chmod 640 "$ENV_ARQ"
 echo "Permissao: root le e escreve, $APP_USER so le, mais ninguem."
 
 passo "6. Teste rapido (127.0.0.1:8000)"
-if ss -ltn | grep -q ':8000 '; then
-    echo "A porta 8000 ja esta em uso (o servico ja deve estar rodando). Teste pulado."
+banco_vazio=   # vazio = nao sabemos; 1 = banco vazio; 0 = banco com dados
+if systemctl is-active --quiet hybrazil-cases 2>/dev/null; then
+    echo "O servico hybrazil-cases ja esta rodando. Teste pulado (reinicie o servico para usar a versao nova)."
+elif ss -ltn | grep -q ':8000 '; then
+    echo "A porta 8000 ja esta em uso por outro programa. Teste pulado."
 else
     log=$(mktemp)
     cd "$RAIZ/backend"
@@ -110,7 +113,12 @@ else
     kill -9 $pid 2>/dev/null || true; wait $pid 2>/dev/null || true
     if [ $ok -eq 1 ] && [ "$tela" -ge 1 ]; then
         echo "OK: o site subiu com o usuario $APP_USER, conectou no banco e entregou a interface."
-        grep -i 'senha gerada' "$log" >/dev/null && echo "(Banco vazio: foi criado um admin provisorio. Ele some quando o backup for restaurado.)"
+        if grep -qi 'senha gerada' "$log"; then
+            banco_vazio=1
+            echo "(Banco vazio: foi criado um admin provisorio. Ele some quando o backup for restaurado.)"
+        else
+            banco_vazio=0
+        fi
     else
         echo "FALHOU. Ultimas linhas do log:" >&2
         tail -25 "$log" >&2
@@ -120,4 +128,8 @@ else
 fi
 
 echo
-echo "Instalacao concluida. Proximo passo: restaurar o backup (scripts/producao/restaurar-backup.sh)."
+case "$banco_vazio" in
+    1) echo "Instalacao concluida. Proximo passo: restaurar o backup (scripts/producao/restaurar-backup.sh)." ;;
+    0) echo "Instalacao concluida. O banco ja tem dados (backup restaurado); as atualizacoes de banco pendentes foram aplicadas." ;;
+    *) echo "Instalacao concluida." ;;
+esac

@@ -150,5 +150,5 @@ O script foi testado num PostgreSQL 18.6. Foram verificados cada item da tabela,
 ## Próximos passos
 
 2. [Instalar o sistema e trazer os dados](02-sistema-e-dados.md) desta máquina (banco + anexos).
-3. Rodar o site como serviço (`systemd`), atrás do nginx com HTTPS.
+3. [Rodar o site como serviço e publicar pelo pfSense (HAProxy)](03-servico-e-pfsense.md).
 4. Configurar o backup semanal para o SharePoint, mantendo os 2 últimos.

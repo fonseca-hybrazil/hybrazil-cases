@@ -80,7 +80,7 @@ rm -rf ~/producao-AAAAMMDD-HHMMSS
 
 ## 3. Ver o site antes de publicar (opcional)
 
-O site ainda não está aberto na rede; isso vem no passo 3, com o nginx. Para olhar agora, suba o site à mão no servidor:
+O site ainda não está aberto na rede; isso vem no passo 3, pelo pfSense. Para olhar agora, suba o site à mão no servidor:
 
 ```bash
 cd /opt/hybrazil-cases/backend
@@ -97,4 +97,4 @@ Abra <http://localhost:8001> e entre com o seu usuário de sempre. Para parar, u
 
 ## Próximo passo
 
-3. Rodar o site como **serviço** (`systemd`, sobe sozinho com o servidor) e publicá-lo na rede pelo **nginx com HTTPS**.
+3. [Rodar o site como **serviço** e publicá-lo pelo **HAProxy do pfSense**](03-servico-e-pfsense.md).
